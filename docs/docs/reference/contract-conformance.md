@@ -1,6 +1,6 @@
 ---
 title: Where the implementation stands
-description: This plugin's actual state against the plugin implementation guide's milestones and the contract's conformance checks.
+description: This plugin's actual state against the implementation plan's milestones and the contract's conformance checks.
 sidebar_position: 3
 ---
 
@@ -11,26 +11,30 @@ This page is deliberately honest about the gap between what the
 in `src/` today. It exists so "use the GitHub plugin as a template" does not imply more is finished
 than actually is.
 
-The milestone spine referenced below is the plugin implementation guide (`09-plugin-implementation-guide.md`
-in `SubZeroDev.PluginContract`) — a repository staged, not yet split out, so no published link exists
-for it yet. This plugin's own
+The milestone spine referenced below is the one in
+[`IMPLEMENTATION-PLAN.md`](https://github.com/The-Running-Dev/SubZeroDev.Plugins.GitHub/blob/main/IMPLEMENTATION-PLAN.md),
+which holds this repository's concrete architecture for Milestones 1–8.
 [`BUILD-PLAN.md`](https://github.com/The-Running-Dev/SubZeroDev.Plugins.GitHub/blob/main/BUILD-PLAN.md)
-predates that guide and numbers its milestones locally and more finely; the mapping below is
-approximate for that reason.
+owns the milestone numbering and exit criteria and numbers them more finely, which is why the mapping
+below is approximate.
 
-## Against the guide's spine
+A generic, reusable version of this spine — usable by a Node, Python, .NET, or PowerShell plugin — belongs
+to `SubZeroDev.PluginContract` once that repository is split out. It is not reachable from here today, and
+nothing in this repository depends on it.
 
-| Spine milestone                        | State                                                                                                                                                                                 |
-| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| M0 — Ground and the contract surface   | **Partial.** The toolchain, layout, CI matrix, and exit-code wiring exist. `plugin.yaml`, the `manifest` command, and result-envelope emission do not.                                |
-| M1 — Configuration, inputs, `validate` | **Not started.** No configuration loader exists; `validate` is a placeholder that exits `3`.                                                                                          |
-| M2 — The local/offline half            | **Not started.**                                                                                                                                                                      |
-| M3 — Plan store and approval gate      | **Skipped by design.** This plugin only reads GitHub and writes its own cache and output; it declares no write capability against an external system. See the guide's read-only rule. |
-| M4a — Remote read adapter              | **Not started.** `@octokit/rest` is a declared dependency, imported nowhere.                                                                                                          |
-| M4b — `plan`                           | **Skipped**, per M3.                                                                                                                                                                  |
-| M5 — `apply`                           | **Skipped**, per M3.                                                                                                                                                                  |
-| M6 — Live round-trip verification      | **Not started.**                                                                                                                                                                      |
-| M7 — Conformance, signing, release     | **Not started.**                                                                                                                                                                      |
+## Against the spine
+
+| Spine milestone                        | State                                                                                                                                                                                                                                     |
+| -------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| M0 — Ground and the contract surface   | **Partial.** The toolchain, layout, and exit-code wiring exist. `plugin.yaml`, the `manifest` command, and result-envelope emission do not, and CI is a single `ubuntu-latest` job — there is no Windows matrix and no container job yet. |
+| M1 — Configuration, inputs, `validate` | **Not started.** No configuration loader exists; `validate` is a placeholder that exits `3`.                                                                                                                                              |
+| M2 — The local/offline half            | **Not started.**                                                                                                                                                                                                                          |
+| M3 — Plan store and approval gate      | **Skipped by design.** This plugin only reads GitHub and writes its own cache and output; it declares no write capability against an external system, so the plan-apply gate does not apply to it.                                        |
+| M4a — Remote read adapter              | **Not started.** `@octokit/rest` is a declared dependency, imported nowhere.                                                                                                                                                              |
+| M4b — `plan`                           | **Skipped**, per M3.                                                                                                                                                                                                                      |
+| M5 — `apply`                           | **Skipped**, per M3.                                                                                                                                                                                                                      |
+| M6 — Live round-trip verification      | **Not started.**                                                                                                                                                                                                                          |
+| M7 — Conformance, signing, release     | **Not started.**                                                                                                                                                                                                                          |
 
 ## Against the contract's conformance checks
 
@@ -65,4 +69,4 @@ checklist for Milestone 7, not as results:
   mounts, but nothing in `src/` reads any of them yet — see [Running in Docker](../guide/docker.md).
 
 `BUILD-PLAN.md` is the authoritative, currently-maintained accounting of what is next; this page is a
-snapshot against the guide and the contract, kept only roughly in sync with it.
+snapshot against the implementation plan and the contract, kept only roughly in sync with them.

@@ -172,6 +172,26 @@ reference example (`network.required: true`, `destinations: [api.github.com]`,
 it never needs it. `inputSchema`/`outputSchema` are added progressively — absent until M7, when option
 tables exist to generate them from.
 
+**`idempotency` per command.** The manifest schema makes this a **required** field on every entry in
+`commands[]`, so all six need a value — not just `sync`. Every command in this plugin is `idempotent`,
+because none of them writes to any system outside this plugin's own cache and output, and repeating any
+of them over unchanged inputs produces the same result. Stated explicitly rather than left to inference,
+because `idempotency` is what a host's retry policy keys on:
+
+| Command    | `idempotency` | Why                                                                                                                                                              |
+| ---------- | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `manifest` | `idempotent`  | Prints fixed bytes from the build; no inputs, no state.                                                                                                          |
+| `validate` | `idempotent`  | Reads and checks only; performs no writes at all.                                                                                                                |
+| `sync`     | `idempotent`  | An unchanged upstream reproduces the same cache and output byte-for-byte — the determinism M5 and M6 exist to prove.                                             |
+| `list`     | `idempotent`  | Reads the cache and renders.                                                                                                                                     |
+| `stats`    | `idempotent`  | Derives aggregates from the cache; no collection, no writes.                                                                                                     |
+| `export`   | `idempotent`  | **The one that looks side-effecting and is not.** It writes files, but rewrites the same canonical bytes from the same cache, so a repeat is a no-op in content. |
+
+None is `conditional`, so no `idempotencyCondition` is needed anywhere — which is why the earlier
+decision to keep `sync` at `idempotent` rather than `conditional` matters beyond `sync` itself. Search
+API eventual consistency is handled where it actually belongs, in the cache's `VOLATILE_FIELDS` exclusion
+(§7), so it never reaches the artifacts whose stability this field describes.
+
 ### 1.6 Threading global options through two-stage `parseArgs`
 
 `src/commands/global-options.ts` defines `GLOBAL_OPTIONS` (`help`, `version`, `output-format`, `json`,
