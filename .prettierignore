@@ -1,2 +1,11 @@
 dist
 coverage
+.config
+build
+docs.ps1
+docs/Dockerfile
+docs/docusaurus.config.ts
+docs/sidebar.ts
+docs/docs/index.md
+.github/workflows/docs-ci.yml
+.github/workflows/docs-deploy.yml

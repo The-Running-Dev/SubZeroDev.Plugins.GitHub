@@ -1,3 +1,9 @@
+---
+title: 'SubZeroDev GitHub Plugin'
+description: 'CLI-first GitHub integration that produces provider-independent, versioned project data.'
+sidebar_position: 1
+---
+
 # SubZeroDev GitHub Plugin
 
 CLI-first GitHub integration plugin that transforms GitHub repository data into
@@ -9,12 +15,12 @@ toolkit or a future automation runtime.
 ## Documentation
 
 The complete documentation is published at
-[plugins-github.subzerodev.com](https://plugins-github.subzerodev.com/):
+[plugins-github.subzerodev.com](/):
 
-- [Getting started](https://plugins-github.subzerodev.com/getting-started)
-- [CLI reference](https://plugins-github.subzerodev.com/cli-reference)
-- [Architecture](https://plugins-github.subzerodev.com/architecture)
-- [Development guide](https://plugins-github.subzerodev.com/development)
+- [Getting started](/getting-started)
+- [CLI reference](/cli-reference)
+- [Architecture](/architecture)
+- [Development guide](/development)
 
 ## Development
 
@@ -136,4 +142,4 @@ failure.
 
 ## License
 
-Licensed under the [MIT License](https://plugins-github.subzerodev.com/license).
+Licensed under the [MIT License](/license).
