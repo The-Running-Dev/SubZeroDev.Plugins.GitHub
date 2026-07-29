@@ -1,6 +1,10 @@
 ---
 title: Decisions
 description: Architecture decision records for the GitHub plugin, and what moved to the plugin contract.
+# Inert but declared, so every page under docs/docs/ states its ordering: _category_.json here
+# carries no `link`, so Docusaurus treats this file as the category's own index page rather than
+# a sibling sidebar item, and does not order it against the ADRs.
+sidebar_position: 1
 ---
 
 # Decisions

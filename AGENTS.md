@@ -168,7 +168,9 @@ src/
 
 tests/               Vitest tests
 docs/docs/           authored documentation
-docs/docs/index.md   generated documentation landing page; do not edit
+docs/docs/index.md   the /docs/ landing page — HAND-AUTHORED under this repository's
+                     routeBasePath: 'docs'. The homepage generator only ever writes
+                     docs/src/pages/index.md; see Documentation below.
 docs/src/pages/index.md
                      generated from README.md; do not edit
 build/               generated documentation tooling

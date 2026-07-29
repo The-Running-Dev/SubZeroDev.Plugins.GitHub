@@ -14,7 +14,10 @@ docs.ps1
 docs/Dockerfile
 docs/docusaurus.config.ts
 docs/sidebar.ts
-docs/docs/index.md
+
+# Generated from README.md by build/ConvertTo-DocumentationHomepage.ps1 — formatting it would
+# fail the GeneratedFile drift check. docs/docs/index.md is deliberately NOT listed: under this
+# repository's routeBasePath: 'docs' it is hand-authored, so it is format-governed like any other page.
 docs/src/pages/index.md
 .github/workflows/docs-ci.yml
 .github/workflows/docs-deploy.yml
