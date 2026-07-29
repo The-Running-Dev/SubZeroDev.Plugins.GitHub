@@ -13,7 +13,17 @@ permissions:
 jobs:
   quality:
     name: Application quality
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
+
+    defaults:
+      run:
+        shell: bash
 
     steps:
       - name: Check out repository

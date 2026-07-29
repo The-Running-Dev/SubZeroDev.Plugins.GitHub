@@ -2,11 +2,22 @@ dist
 coverage
 .config
 build
+
+# Vendored from the plugin contract and kept byte-for-byte. Formatting them would
+# break the digests recorded in schemas/contract/VENDORED.md and make the copies
+# undiffable against their source. Only the vendored files, not schemas/ generally
+# — this plugin's own generated schemas are canonicalized by its own serializer.
+schemas/contract/plugin-manifest.schema.json
+schemas/contract/result-envelope.schema.json
+
 docs.ps1
 docs/Dockerfile
 docs/docusaurus.config.ts
 docs/sidebar.ts
-docs/docs/index.md
+
+# Generated from README.md by build/ConvertTo-DocumentationHomepage.ps1 — formatting it would
+# fail the GeneratedFile drift check. docs/docs/index.md is deliberately NOT listed: under this
+# repository's routeBasePath: 'docs' it is hand-authored, so it is format-governed like any other page.
 docs/src/pages/index.md
 .github/workflows/docs-ci.yml
 .github/workflows/docs-deploy.yml

@@ -1,7 +1,7 @@
 ---
 title: Getting started
 description: Install, validate, and run the SubZeroDev GitHub Plugin.
-sidebar_position: 2
+sidebar_position: 1
 ---
 
 # Getting started
@@ -38,18 +38,14 @@ build.
 The runner installs locked dependencies unless `-SkipInstall` is supplied,
 builds the CLI, and passes remaining arguments to it.
 
-## Run in Docker
-
-```powershell
-./run.ps1 -Mode Docker -BuildImage -CliArgument '--help'
-```
-
-Docker mode mounts `.cache/` at `/data/cache` and `output/` at `/data/output`.
-For commands that require GitHub authentication, define `GITHUB_TOKEN` in the
-current process. The runner forwards the variable by name without including its
-value in the Docker command.
-
 ## Current limitation
 
 `sync`, `list`, `stats`, `export`, and `validate` currently report that they are
-not implemented and exit with code `3`. Help and version output are functional.
+not implemented and exit with code `3`. Help and version output are functional. The plugin contract
+additionally requires a `manifest` command; it does not exist in this scaffold yet — see the
+[CLI reference](../reference/cli.md).
+
+## Next
+
+- [Running in Docker](./docker.md) for the container workflow
+- [CLI reference](../reference/cli.md) for the full command and option surface

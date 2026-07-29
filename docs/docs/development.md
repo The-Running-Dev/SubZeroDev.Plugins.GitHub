@@ -1,7 +1,7 @@
 ---
 title: Development
 description: Local workflows, tests, Docker, and documentation maintenance.
-sidebar_position: 5
+sidebar_position: 6
 ---
 
 # Development
@@ -35,11 +35,29 @@ host UID and GID. The PowerShell runner handles that automatically unless
 
 ## Documentation
 
-Authored pages live under `docs/docs/`. The homepage is generated from
-`README.md`; do not edit `docs/docs/index.md` directly.
+Authored pages live under `docs/docs/`, grouped into `guide/`, `reference/`, and `decisions/`
+sections plus a few top-level pages, with `sidebar_position` front matter setting reading order
+within each level. The site homepage — `docs/src/pages/index.md`, not `docs/docs/index.md` — is
+generated from `README.md`. Do not edit it directly; after changing the README, regenerate it:
 
 ```powershell
 ./docs.ps1 -BuildOnly
+```
+
+`docs.ps1` needs Docker. Without it, invoke the generator directly with the arguments recorded in
+`.config/DocumentationRules.psd1`:
+
+```powershell
+./build/ConvertTo-DocumentationHomepage.ps1 -ReadmePath ./README.md `
+  -Title 'SubZeroDev GitHub Plugin' `
+  -Description 'CLI-first GitHub integration that produces provider-independent, versioned project data.' `
+  -SiteUrl 'https://plugins-github.subzerodev.com/' -RouteBasePath 'docs' `
+  -OutputPath docs/src/pages/index.md
+```
+
+Then validate:
+
+```powershell
 ./build/Test-Documentation.ps1
 ```
 
