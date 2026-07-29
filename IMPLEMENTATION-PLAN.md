@@ -466,6 +466,18 @@ ties; no file under `src/models/` resolves an import to `@octokit/*` or `src/pro
 
 ## 3. Milestone 2 — Ports, configuration, and secret safety
 
+> **Scope boundary, reconciled with `BUILD-PLAN.md`.** That document originally listed four items
+> here that cannot land in this milestone, because each needs something built later: option
+> precedence and the exit-code mapping need the CLI layer (§5, §9), the `CacheStore` shape depends on
+> resource keys and reconciliation (§5, §7), and the serializer shape depends on the document set it
+> serializes (§8). `BUILD-PLAN.md`'s Milestone 2 now records them as moved, with the reason. If a
+> future reader finds the two documents disagreeing again, this ordering is the considered one and
+> the checklist is what drifted.
+>
+> `CollectionResult` and `DiscoveredRepository` are deliberately stubs until Milestone 3, for the
+> same reason: carrying rate-limit and partial-failure results means carrying per-resource ETags and
+> a rate-limit snapshot, and guessing those shapes now guarantees changing them later.
+
 **Files.** `src/configuration/{schema,load,resolve,environment,errors}.ts`.
 `src/logging/{logger,redaction,secret-registry}.ts`. `src/services/{ports,system}.ts`.
 `src/providers/provider.ts` (rewritten). `src/providers/outcome.ts`. `tests/configuration/*.test.ts`,
