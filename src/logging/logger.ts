@@ -103,7 +103,14 @@ export function createLogger({ level, quiet = false, destination }: CreateLogger
         // would differ between runs in a snapshot.
         base: null,
         redact: { paths: REDACT_PATHS, censor: REDACTED },
-        serializers: { err: sanitizeError, error: sanitizeError },
+        // Backstop for a raw Error reaching pino by a path that skipped deepScrub.
+        // Guarded, because the normal path has already converted Errors to plain
+        // SanitizedError objects — running sanitizeError on one of those would
+        // collapse it to { name: 'Error', message: '[object Object]' }.
+        serializers: {
+          err: (value: unknown) => (value instanceof Error ? sanitizeError(value) : value),
+          error: (value: unknown) => (value instanceof Error ? sanitizeError(value) : value),
+        },
         formatters: { level: (label) => ({ level: label }) },
       },
       destination ?? pinoDestination({ fd: 2, sync: true }),

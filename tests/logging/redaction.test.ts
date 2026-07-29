@@ -122,6 +122,30 @@ describe('logger destination', () => {
     expect(text()).not.toContain('CANARY');
   });
 
+  it('scrubs an Error logged under any key, at any depth', () => {
+    // Regression: deepScrub used to pass Error instances through for "the serializer
+    // to handle" — but serializers fire only on the err/error keys, so an Error under
+    // another key, or nested a level down, reached the output with its enumerable own
+    // properties intact. Octokit-style errors carry the authorization header exactly
+    // there, and pino's path-based redact stops matching one level down.
+    registerSecret(CANARY);
+    const { stream, text } = capture();
+    const logger = createLogger({ level: 'trace', destination: stream });
+
+    const requestError = Object.assign(new Error(`msg ${CANARY}`), {
+      request: { headers: { authorization: `token ${CANARY}` } },
+      extra: `plain ${CANARY}`,
+    });
+    logger.info('non-serializer key', { boom: requestError });
+    logger.info('nested two deep', { outer: { inner: requestError } });
+
+    expect(text()).not.toContain('CANARY');
+    // And the err-key path still produces a readable shape, not '[object Object]'.
+    logger.error('serializer key', { err: new Error(`nested ${CANARY}`) });
+    expect(text()).toContain('nested [redacted]');
+    expect(text()).not.toContain('[object Object]');
+  });
+
   it('raises the effective level to error when quiet', () => {
     const { stream, text } = capture();
     const logger = createLogger({ level: 'trace', quiet: true, destination: stream });

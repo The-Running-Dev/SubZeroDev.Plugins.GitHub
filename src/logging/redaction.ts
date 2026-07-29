@@ -21,12 +21,18 @@ export function scrubSecrets(value: string): string {
  * wherever it sits — a bare message, a nested field, an array element — rather than
  * only at the paths a redaction list happens to name.
  *
- * `Error` instances are returned untouched for `sanitizeError` to handle: it produces
- * a fixed shape and drops `request`/`response`, which walking generically here would
- * instead copy.
+ * `Error` instances are converted through `sanitizeError` **here**, not left for a
+ * serializer. An earlier version passed them through untouched on the assumption
+ * that pino's `err` serializer would handle them — but serializers fire only on
+ * their configured keys, so an Error logged under any other key, or nested inside
+ * another object, reached the output with its enumerable own properties intact.
+ * Octokit-style errors carry `request.headers.authorization` exactly there, and
+ * pino's path-based `redact` stops matching one level down. Converting at the walk
+ * is what makes the guarantee hold at every key and every depth.
  */
 export function deepScrub(value: unknown, depth = 0): unknown {
-  if (depth > 8 || value instanceof Error) return value;
+  if (depth > 8) return value;
+  if (value instanceof Error) return sanitizeError(value);
   if (typeof value === 'string') return scrubSecrets(value);
   if (Array.isArray(value)) return value.map((entry) => deepScrub(entry, depth + 1));
   if (typeof value === 'object' && value !== null) {
