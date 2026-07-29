@@ -3,17 +3,11 @@ import { join } from 'node:path';
 
 import { parse } from 'yaml';
 
-import type { FileSystemPort } from '../services/ports.js';
-
-export interface GhCliCredential {
-  readonly token: string;
-  readonly configPath: string;
-}
-
-export interface GhCliCredentialSource {
-  /** Resolves `null` when no credential is available, rather than throwing. */
-  read(): Promise<GhCliCredential | null>;
-}
+import type {
+  ExternalCredential,
+  ExternalCredentialSource,
+  FileSystemPort,
+} from '../../services/ports.js';
 
 /**
  * Where the GitHub CLI keeps `hosts.yml`. `GH_CONFIG_DIR` wins when set, matching
@@ -34,20 +28,24 @@ export function ghConfigPath(environment: Readonly<NodeJS.ProcessEnv>, home = ho
 
 function extractToken(parsed: unknown, host: string): string | null {
   if (typeof parsed !== 'object' || parsed === null) return null;
-  const hosts = parsed as Record<string, unknown>;
-  const entry = hosts[host];
+  const entry = (parsed as Record<string, unknown>)[host];
   if (typeof entry !== 'object' || entry === null) return null;
   const token = (entry as Record<string, unknown>)['oauth_token'];
   return typeof token === 'string' && token.length > 0 ? token : null;
 }
 
 /**
- * Reads `gh`'s stored credential **directly, as a file**. Deliberately not
- * `gh auth token` in a subprocess: spawning one would require declaring
- * `capabilities.processExecution: true` in the manifest, widening the security
- * surface of the reference plugin every other plugin is scaffolded from, for an
- * opt-in convenience most runs never use. `hosts.yml` is already YAML, which this
- * package already parses.
+ * Lives under `src/providers/github/` because `hosts.yml`, the `github.com` key, and
+ * the `oauth_token` field are all GitHub CLI specifics — provider-specific
+ * acquisition belongs behind the provider boundary. Token resolution depends only on
+ * the `ExternalCredentialSource` port, so nothing in `src/configuration/` knows this
+ * format exists.
+ *
+ * Reads the credential **directly, as a file**. Deliberately not `gh auth token` in a
+ * subprocess: spawning one would require declaring `capabilities.processExecution:
+ * true` in the manifest, widening the security surface of the reference plugin every
+ * other plugin is scaffolded from, for an opt-in convenience most runs never use.
+ * `hosts.yml` is already YAML, which this package already parses.
  *
  * Scoped to native execution by nature. `gh`'s config lives in the invoking user's
  * home directory, outside the plugin's declared filesystem scopes, so under the
@@ -59,11 +57,11 @@ export function createGhCliCredentialSource(
   fileSystem: FileSystemPort,
   environment: Readonly<NodeJS.ProcessEnv>,
   host = 'github.com',
-): GhCliCredentialSource {
+): ExternalCredentialSource {
   const configPath = ghConfigPath(environment);
 
   return {
-    async read() {
+    async read(): Promise<ExternalCredential | null> {
       let contents: string;
       try {
         contents = new TextDecoder().decode(await fileSystem.readFile(configPath));

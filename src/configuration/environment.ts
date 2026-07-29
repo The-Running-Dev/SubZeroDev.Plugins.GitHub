@@ -1,7 +1,7 @@
 import { registerSecret } from '../logging/secret-registry.js';
+import type { ExternalCredentialSource } from '../services/ports.js';
 
 import { ConfigurationError } from './errors.js';
-import type { GhCliCredentialSource } from './gh-cli-credentials.js';
 
 /**
  * `source` is required, not optional, so a token's provenance is structural. The
@@ -26,7 +26,12 @@ export interface ResolveTokenOptions {
   readonly environment: Readonly<NodeJS.ProcessEnv>;
   readonly environmentVariable: string;
   readonly allowGhCliTokenReuse: boolean;
-  readonly ghCli?: GhCliCredentialSource;
+  /**
+   * The port, not a concrete reader. Keeps this module free of any provider's
+   * credential storage format — the GitHub CLI implementation lives under
+   * `src/providers/github/`.
+   */
+  readonly ghCli?: ExternalCredentialSource;
 }
 
 /**

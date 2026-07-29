@@ -6,7 +6,7 @@ import { resolveToken } from '../../src/configuration/environment.js';
 import {
   createGhCliCredentialSource,
   ghConfigPath,
-} from '../../src/configuration/gh-cli-credentials.js';
+} from '../../src/providers/github/gh-cli-credentials.js';
 import { clearRegisteredSecrets, registeredSecrets } from '../../src/logging/secret-registry.js';
 import { memoryFileSystem } from '../support/fake-ports.js';
 

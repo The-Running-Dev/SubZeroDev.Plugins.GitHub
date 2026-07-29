@@ -103,6 +103,17 @@ describe('configuration schema shape', () => {
    * prose saying "never add a token field" is not enforcement, and a future field
    * named `token`, `pat`, or `credential` would otherwise pass review and only fail
    * once a real secret had been committed to somebody's config file.
+   *
+   * **This reads Zod's internal `_zod.def`, which is not public API.** Accepted for
+   * now, with `zod` pinned to `~4.4.3` so a minor bump cannot silently change the
+   * shape underneath it; a patch release changing internals is unlikely, and the
+   * failure mode is a loud test error rather than a disarmed guard.
+   *
+   * The better fix is to walk `z.toJSONSchema()` output instead — public API, and the
+   * same call Milestone 6 introduces for `projects.schema.json` (§8). Deferred to
+   * there rather than done speculatively here, because this schema ends in a
+   * `.refine()` and whether that survives JSON Schema conversion needs verifying, not
+   * assuming.
    */
   function leafKeys(schema: z.ZodType, seen = new Set<unknown>()): string[] {
     if (seen.has(schema)) return [];

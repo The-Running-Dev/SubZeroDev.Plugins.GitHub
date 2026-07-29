@@ -55,10 +55,21 @@ export interface RequestUsage {
 export interface RepositoryProvider {
   checkAccess(): Promise<Outcome<ProviderAccess, ProviderError>>;
   discover(filter: RepositoryFilter): AsyncIterable<Outcome<DiscoveredRepository, ProviderError>>;
+  /**
+   * `Outcome`, like the other two. A bare `CollectionResult` would leave a provider
+   * no way to report failure except by throwing, and a throw from inside the
+   * per-repository loop aborts the whole run — the exact opposite of the
+   * partial-success requirement, where one repository failing must leave the rest
+   * collected and exit `4`.
+   *
+   * Note the two distinct failure levels: an `ok: false` here is "this repository
+   * could not be collected at all", whereas a successful `CollectionResult` may still
+   * carry `diagnostics` for individual resources that were unavailable.
+   */
   collect(
     target: DiscoveredRepository,
     profile: CollectionProfile,
     conditions: ResourceConditions,
-  ): Promise<CollectionResult>;
+  ): Promise<Outcome<CollectionResult, ProviderError>>;
   usage(): RequestUsage;
 }
