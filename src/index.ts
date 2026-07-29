@@ -1,2 +1,2 @@
 export * from './models/index.js';
-export type { ProjectProvider } from './providers/provider.js';
+export type { RepositoryProvider } from './providers/provider.js';
