@@ -23,11 +23,11 @@ boundary, Vitest, ESLint, Prettier, and Docker.
 The commands intentionally return "not implemented". No GitHub API, configuration, synchronization,
 cache, export, or statistics behaviour exists yet.
 
-**Milestone 0 is not fully complete.** `.github/workflows/ci.yml` is a single `ubuntu-latest` job today
-— there is no `[ubuntu-latest, windows-latest]` matrix, no `fail-fast: false`, and no container job.
-This repository's git history does not contain a PR #11 or a green Windows CI run; an earlier version
-of this section claimed both, which was wrong. `IMPLEMENTATION-PLAN.md` §2 folds the matrix into the
-Milestone 1 pull request, and §10 (Milestone 8) creates the container job — neither exists yet.
+**Milestone 0 is pending CI observation.** The `[ubuntu-latest, windows-latest]` matrix and
+`fail-fast: false` are configured in this branch, but a green Windows run has not yet been observed.
+The container job remains a Milestone 8 deliverable. This repository's git history does not contain a
+PR #11; an earlier version of this section claimed both a PR and a completed Windows run, which was
+wrong.
 
 ## Ordering principle
 
@@ -39,7 +39,7 @@ deliberate departures from that, both de-risking:
   as the code.
 - **The `manifest` command and envelope** come early, because conformance depends on them.
 
-## Milestone 0 — Close decisions and stabilize the scaffold — **done**
+## Milestone 0 — Close decisions and stabilize the scaffold — **partially complete**
 
 - [x] Phase One boundary decisions recorded in
       [ADR-002](docs/docs/decisions/adr-002-phase-one-boundaries.md)
@@ -48,8 +48,8 @@ deliberate departures from that, both de-risking:
 - [x] Installed-entry-point test made portable, probing symlink support and skipping where the
       platform forbids it
 - [x] `[ubuntu-latest, windows-latest]` CI matrix, `fail-fast: false`, defaulting to bash
+- [ ] Matrix check suite observed green on both Windows and Linux
 - [x] CLI exit codes defined, `1` reserved for uncaught exceptions
-- [x] Full check suite green on Windows and Linux
 
 ## Milestone 1 — Domain contracts and canonical schemas
 
@@ -202,18 +202,18 @@ rather than shipping four artifacts that disagree.
 Keep reviews bounded and the branch green. Each PR includes tests for its exit criteria and leaves
 `npm run check` passing.
 
-| PR  | Milestone                              |
-| --- | -------------------------------------- |
-| 1   | M0 — done                              |
-| 2   | M1 domain schemas and fixtures         |
-| 3   | M2 ports, configuration, secret safety |
-| 4   | M3 adapter, discovery, rate limits     |
-| 5   | M3.5 first runnable slice              |
-| 6   | M4 metadata, statistics, profiles      |
-| 7   | M5 cache and atomic synchronization    |
-| 8   | M6 serializers and export              |
-| 9   | M7 CLI and wiring                      |
-| 10  | M8 Docker, docs, conformance, release  |
+| PR  | Milestone                                 |
+| --- | ----------------------------------------- |
+| 1   | M0 — decisions and scaffold stabilization |
+| 2   | M1 domain schemas and fixtures            |
+| 3   | M2 ports, configuration, secret safety    |
+| 4   | M3 adapter, discovery, rate limits        |
+| 5   | M3.5 first runnable slice                 |
+| 6   | M4 metadata, statistics, profiles         |
+| 7   | M5 cache and atomic synchronization       |
+| 8   | M6 serializers and export                 |
+| 9   | M7 CLI and wiring                         |
+| 10  | M8 Docker, docs, conformance, release     |
 
 ## Definition of done
 
