@@ -18,4 +18,21 @@ export default tseslint.config(
       },
     },
   },
+  {
+    files: ['src/**/*.ts'],
+    ignores: ['src/providers/github/**'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['@octokit/*'],
+              message: 'Octokit is confined to src/providers/github/.',
+            },
+          ],
+        },
+      ],
+    },
+  },
 );

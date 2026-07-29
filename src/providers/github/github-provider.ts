@@ -1,0 +1,97 @@
+import type { ResolvedToken } from '../../configuration/environment.js';
+import type { Logger } from '../../logging/logger.js';
+import type { Clock, Sleeper } from '../../services/ports.js';
+import type {
+  CollectionResult,
+  DiscoveredRepository,
+  ProviderAccess,
+  RepositoryFilter,
+  RepositoryProvider,
+  RequestUsage,
+} from '../provider.js';
+import type { Outcome, ProviderError } from '../outcome.js';
+
+import { createGitHubClient, type GitHubClient } from './client.js';
+import { discoverOwnedRepositories, githubUserSchema } from './discovery.js';
+import { providerError } from './errors.js';
+import { mapRepository } from './mapping/repository.js';
+import type { RequestBudget } from './rate-limit.js';
+
+export interface CreateGitHubProviderOptions {
+  readonly token: ResolvedToken;
+  readonly logger: Logger;
+  readonly sleeper: Sleeper;
+  readonly clock: Clock;
+  readonly budget: RequestBudget;
+  readonly userAgent: string;
+  readonly documentationUrlTemplate?: string | null;
+  readonly fetch?: typeof globalThis.fetch;
+  readonly random?: () => number;
+  readonly baseUrl?: string;
+}
+
+export class GitHubProvider implements RepositoryProvider {
+  private readonly client: GitHubClient;
+  private readonly documentationUrlTemplate: string | null;
+  private readonly token: ResolvedToken;
+
+  public constructor(options: CreateGitHubProviderOptions) {
+    this.client = createGitHubClient(options);
+    this.documentationUrlTemplate = options.documentationUrlTemplate ?? null;
+    this.token = options.token;
+  }
+
+  public async checkAccess(): Promise<Outcome<ProviderAccess, ProviderError>> {
+    const url = new URL('/user', this.client.baseUrl);
+    const response = await this.client.requester.get(
+      { resource: 'authenticated-user', url: url.toString(), bucket: 'core' },
+      (value) => githubUserSchema.parse(value),
+    );
+    if (!response.ok) return response;
+    if (response.value.data === null) {
+      return {
+        ok: false,
+        error: providerError(
+          'response-shape',
+          'github_user_not_available',
+          'GitHub did not return an authenticated user.',
+        ),
+      };
+    }
+    return {
+      ok: true,
+      value: {
+        login: response.value.data.login,
+        ownerProviderId: String(response.value.data.id),
+        tokenSource: this.token.source,
+      },
+    };
+  }
+
+  public async *discover(
+    filter: RepositoryFilter,
+  ): AsyncIterable<Outcome<DiscoveredRepository, ProviderError>> {
+    for await (const result of discoverOwnedRepositories(this.client, filter)) {
+      if (!result.ok) {
+        yield result;
+        return;
+      }
+      yield {
+        ok: true,
+        value: {
+          repository: mapRepository(result.value, {
+            documentationUrlTemplate: this.documentationUrlTemplate,
+          }),
+        },
+      };
+    }
+  }
+
+  public collect(target: DiscoveredRepository): Promise<Outcome<CollectionResult, ProviderError>> {
+    return Promise.resolve({ ok: true, value: { repository: target.repository, diagnostics: [] } });
+  }
+
+  public usage(): RequestUsage {
+    return this.client.requester.usage();
+  }
+}
