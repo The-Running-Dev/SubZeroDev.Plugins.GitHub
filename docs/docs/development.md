@@ -61,10 +61,6 @@ Then validate:
 ./build/Test-Documentation.ps1
 ```
 
-`specs/` — the staged specifications for other, not-yet-split SubZeroDev repositories — is excluded
-from this gate and from Prettier. It follows another repository's conventions and is not part of
-this plugin's documentation; see `AGENTS.md`.
-
 The documentation build uses the shared template image pinned by immutable
 digest. Pull requests run the Markdown gate and a production-equivalent build.
 Pushes to `main` build and deploy through GitHub Pages.

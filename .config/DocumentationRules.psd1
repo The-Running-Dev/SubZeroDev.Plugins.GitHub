@@ -34,7 +34,6 @@
         'coverage'
         'dist'
         'node_modules'
-        'specs'
     )
 
     # --- GeneratedFiles:start ---

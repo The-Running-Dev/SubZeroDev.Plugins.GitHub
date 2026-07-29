@@ -173,17 +173,18 @@ docs/src/pages/index.md
                      generated from README.md; do not edit
 build/               generated documentation tooling
 .config/             documentation validation rules
-specs/               staged ecosystem-wide specifications for other, not-yet-split
-                     repositories — not part of this plugin's documentation or its
-                     published site; excluded from the docs gate and from Prettier
+schemas/contract/    the plugin contract's manifest and result-envelope schemas, vendored
+                     byte-for-byte; never hand-edit them — see schemas/contract/VENDORED.md
+                     for provenance and the refresh procedure
 ```
 
 `docs/docs/decisions/` **is** this repository's ADR directory. Do not create a second `adr/` at the
 root — that duplication is exactly the failure the ecosystem specifications were written to stop.
 
-Most `src/` subdirectories above are currently placeholders (`.gitkeep` only). The plugin contract
-also requires `schemas/`, `examples/`, and `plugin.yaml` at the repository root, and a `CHANGELOG.md`
-— none of which exist yet. `BUILD-PLAN.md` tracks when each lands.
+Most `src/` subdirectories above are currently placeholders (`.gitkeep` only). Beyond the vendored
+contract schemas, the plugin contract also requires `examples/`, `plugin.yaml`, and a `CHANGELOG.md`
+at the repository root, plus this plugin's own generated `schemas/projects.schema.json` — none of which
+exist yet. `BUILD-PLAN.md` tracks when each lands, and `IMPLEMENTATION-PLAN.md` says how.
 
 ## Documentation
 
@@ -311,9 +312,9 @@ assertion.
 ## Conventions
 
 These hold in every SubZeroDev specification repository. The canonical copy of this block is
-`AGENTS.md` in the Architecture repository — staged at
-`specs/SubZeroDev-Ecosystem-Specifications/SubZeroDev.Ecosystem/AGENTS.md` in this repository until
-that repository is split out; it is repeated here because a repository has to stand on its own.
+`AGENTS.md` in the Architecture repository (`SubZeroDev.Ecosystem`); it is repeated here because a
+repository has to stand on its own. If that block changes there, change it here in the same commit —
+the point of naming a canonical copy is that a reviewer can check the others against it.
 
 - **Reference, never restate.** A rule that lives in another document is linked, not copied. Two
   copies of a rule is a promise they will diverge and a guarantee nobody will notice which is stale.

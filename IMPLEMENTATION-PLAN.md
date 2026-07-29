@@ -31,21 +31,29 @@ get fixed here: PR 2 (§12) folds in the CI matrix, and Milestone 8 creates the 
 
 ## 1. Cross-cutting decisions (apply throughout, stated once)
 
-### 1.1 Vendor the two contract schemas
+### 1.1 The two contract schemas are already vendored
 
 ```
 schemas/
   contract/
-    plugin-manifest.schema.json     vendored byte-for-byte, never edited here
-    result-envelope.schema.json     vendored byte-for-byte, never edited here
+    plugin-manifest.schema.json     vendored byte-for-byte, never edited here — DONE
+    result-envelope.schema.json     vendored byte-for-byte, never edited here — DONE
     VENDORED.md                     provenance: source path, schema $id, contract version
                                      1.0.0-draft, copy date, sha256 — honestly stating no
-                                     upstream commit SHA exists yet (contract repo not split out)
-  projects.schema.json              generated from Zod — this plugin owns it
+                                     upstream commit SHA exists yet (contract repo not split out) — DONE
+  projects.schema.json              generated from Zod — this plugin owns it (M6)
   sync.input.schema.json            generated (M7)
   sync.output.schema.json           generated (M7)
   export.output.schema.json         generated (M7)
 ```
+
+**These three files already exist at `schemas/contract/` in this repository** — vendored ahead of
+Milestone 2 because their original source (a staged, untracked copy of the ecosystem specifications)
+was relocated out of this repository before Milestone 1 started, and a plan telling an implementer to
+vendor from a path that no longer resolves is a dead end. `VENDORED.md` records the honest provenance,
+including that no upstream commit SHA exists yet, and the refresh procedure to follow once
+`SubZeroDev.PluginContract` becomes its own repository. What remains as **M2 work**: the ajv test suite
+below, which does not exist yet.
 
 `tests/contract/ajv.ts` — shared `Ajv2020` factory (`ajv/dist/2020.js` + `ajv-formats`, `strict: true`).
 `tests/contract/manifest.test.ts` and `envelope.test.ts` validate positive cases from this plugin's own
@@ -248,6 +256,125 @@ refusal; the resolved token source is present in `validate`'s output and the run
 that has one; no `processExecution` capability is declared in `plugin.yaml`; a token sourced from `gh`'s
 credential file is redacted from logs and the envelope identically to an environment-sourced one.
 
+### 1.8 npm package, publishing, and `npx`
+
+The plugin ships as an npm package in addition to the OCI image, so it can be installed and run through
+Node with no container. Landed in **Milestone 8** (§10); recorded here because it constrains
+`package.json` and the `bin` surface from the start.
+
+**Published to npmjs.com, with the tarball also attached to each GitHub Release.** GitHub Packages was
+considered and rejected as the primary registry for one disqualifying reason: it has **no anonymous read
+for npm packages**, even public ones, so every consumer — including `npx` — must first configure an
+authenticated `.npmrc`. That defeats the point of offering `npx` at all. npmjs.com is the registry that
+makes a zero-setup `npx` work; the GitHub Release tarball covers provenance and archival, and gives
+anyone who prefers it a direct, versioned download.
+
+**Package name: `@subzerodev/plugins-github`** — mirroring the repository name
+`SubZeroDev.Plugins.GitHub`. This is a rename from the current `@subzerodev/plugin-github` (singular)
+and settles ecosystem work item X14 for this plugin, which explicitly asked for naming to be fixed
+_before first publish_ — free now, expensive after. The plugin contract's name-mapping table lists the
+language-package row as "per-ecosystem convention" and gives `@subzerodev/plugin-github` only as an
+example, so this is a convention choice rather than a contract violation — but the divergence is real
+and must be recorded, not left to be discovered. Touchpoints for the rename:
+
+| File                                                    | Change                                                                                                                 |
+| ------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `package.json`                                          | `name` → `@subzerodev/plugins-github`                                                                                  |
+| `docs/docs/reference/specification.md`                  | The identity table's `Package` row                                                                                     |
+| `AGENTS.md`                                             | The "Naming" section, which currently states the singular form as current                                              |
+| `docs/docs/decisions/adr-001-hosting-and-versioning.md` | **Add a dated amendment** — do not edit the Decision or the existing amendments. An ADR records what was decided when. |
+| New ADR                                                 | Records the rename, the npmjs.com-over-GitHub-Packages decision, and the anonymous-read reasoning above                |
+
+Upstream, the contract's own name-mapping example and reference `plugin.yaml` should be updated to match
+once `SubZeroDev.PluginContract` is its own repository — otherwise the next plugin author copies the
+singular form. Out of scope for this repository; note it in the new ADR so it is not lost.
+
+**`package.json` changes** (Milestone 8):
+
+```jsonc
+{
+  "name": "@subzerodev/plugins-github",
+  // "private": true is REMOVED — it currently blocks publish entirely
+  "license": "MIT", // a LICENSE file already exists at the root but is not mirrored here
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/The-Running-Dev/SubZeroDev.Plugins.GitHub.git",
+  },
+  "bugs": { "url": "https://github.com/The-Running-Dev/SubZeroDev.Plugins.GitHub/issues" },
+  "homepage": "https://plugins-github.subzerodev.com",
+  "publishConfig": {
+    "access": "public", // scoped packages default to restricted; without this, publish fails
+    "registry": "https://registry.npmjs.org", // explicit, so a stray .npmrc cannot retarget a publish
+  },
+  "bin": {
+    "subzerodev-github": "./dist/cli.js", // canonical, per the contract's name mapping
+    "sz-github": "./dist/cli.js", // convenience alias; automation must not depend on it
+    "plugins-github": "./dist/cli.js", // exists ONLY so `npx @subzerodev/plugins-github` resolves
+  },
+  "files": ["dist", "schemas", "plugin.yaml"], // npm always adds package.json, README, LICENSE
+  "scripts": {
+    "prepublishOnly": "npm run check", // nothing publishes without the full gate having passed
+  },
+}
+```
+
+**Why the third `bin` entry.** `npx @scope/name` resolves by looking for a bin matching the _unscoped
+package name_ — here `plugins-github`. With only `subzerodev-github` and `sz-github` declared, npm
+cannot determine which to run and errors with "could not determine executable to run", so the bare
+`npx @subzerodev/plugins-github` the feature exists to provide would fail. The alternative is requiring
+`npx -p @subzerodev/plugins-github subzerodev-github <command>` — correct but hostile. One extra `bin`
+line buys the clean form; it is packaging glue, not a fourth CLI identity, and the docs should present
+`subzerodev-github` as the command's name throughout.
+
+Supported invocations after this lands, all of which the M8 documentation must show working:
+
+```bash
+npx @subzerodev/plugins-github --help          # zero install
+npm install -g @subzerodev/plugins-github      # then: subzerodev-github --help  /  sz-github --help
+npm install @subzerodev/plugins-github         # as a dependency; ./node_modules/.bin/subzerodev-github
+node dist/cli.js --help                        # from a clone, unchanged from today
+```
+
+**Release workflow** (`.github/workflows/release.yml`, new). Triggered on a `v*` tag push, plus
+`workflow_dispatch`. Needs `permissions: { contents: write, id-token: write }` — `contents: write` to
+create the Release and upload the tarball, `id-token: write` for npm provenance.
+
+1. `npm ci`, then `npm run check` on the matrix — a release must not be the first place the suite runs.
+2. **Assert version consistency**: `package.json` `version` === `plugin.yaml` `version` === the git tag
+   (minus `v`) === the image's `org.opencontainers.image.version` label. A mismatch fails the release
+   rather than shipping four artifacts that disagree about what they are. This is a scripted check, not
+   a review step.
+3. `npm pack`, then **assert the tarball's contents** with `npm pack --dry-run --json`: `dist/`,
+   `schemas/`, and `plugin.yaml` present; `tests/`, `docs/`, `.github/`, and any `.env` absent. The
+   `files` allowlist makes this likely, not certain — a packaging mistake that ships tests is noise, but
+   one that ships a fixture token is a secret leak, so it gets an assertion.
+4. `npm publish --provenance --access public` with `NODE_AUTH_TOKEN` from `secrets.NPM_TOKEN`.
+   `--provenance` ties the published package to this repository and the exact commit via OIDC; it
+   requires the `id-token: write` permission above and a public repository.
+5. Build, push, and sign the OCI image; replace `plugin.yaml`'s placeholder digest with the real one
+   (§10, already planned).
+6. Create the GitHub Release and `gh release upload` the `.tgz` from step 3 alongside the signed image
+   digest and the conformance report.
+
+**Use `files`, never `.npmignore`.** Two mechanisms for the same decision drift, and `files` is an
+allowlist — the safer default, since a new top-level directory is excluded by omission rather than
+included by oversight.
+
+**Test strategy.** A packaging test (`tests/packaging/package-metadata.test.ts`) asserting, without
+publishing anything: `private` is absent; `license`, `repository`, and `homepage` are present; every
+`bin` target resolves to a file that exists after a build and begins with the `#!/usr/bin/env node`
+shebang; `files` includes `dist`, `schemas`, and `plugin.yaml`; and `version` matches `plugin.yaml`. The
+existing `tests/cli.test.ts` already covers the installed-binary-symlink path that a global install
+relies on, and must keep passing unedited. Actual `npx` resolution cannot be tested without publishing;
+verify it once manually against the first published version and record the result in the release PR.
+
+**Exit:** `npm pack --dry-run` lists `dist/`, `schemas/`, and `plugin.yaml` and lists no file under
+`tests/`, `docs/`, or `.github/`; `package.json` carries no `private` field and declares `license`,
+`repository`, and `homepage`; every declared `bin` target exists after a build and carries a shebang;
+the release workflow refuses to publish when `package.json`, `plugin.yaml`, the git tag, and the image
+label do not all state the same version; `npx @subzerodev/plugins-github --help` exits 0 against the
+published package with no `.npmrc` configured, and that verification is recorded rather than assumed.
+
 ---
 
 ## 2. Milestone 1 — Domain contracts and canonical schemas
@@ -324,7 +451,9 @@ ties; no file under `src/models/` resolves an import to `@octokit/*` or `src/pro
 `src/providers/provider.ts` (rewritten). `src/providers/outcome.ts`. `tests/configuration/*.test.ts`,
 `tests/logging/redaction.test.ts`, `tests/support/fake-ports.ts`,
 `tests/fixtures/configuration/{valid-minimal,valid-full,unknown-key,wrong-version,malformed,contains-token}.json`.
-Repo root: `schemas/contract/` vendored (§1.1), `examples/github.config.json`, `CHANGELOG.md`.
+New here: `tests/contract/{ajv,manifest.test,envelope.test}.ts` (§1.1 — the schemas themselves are
+already vendored; this is the suite that validates against them). Repo root:
+`examples/github.config.json`, `CHANGELOG.md`.
 
 **Key types:**
 
@@ -904,15 +1033,19 @@ file in `bytes` and `sha256`.
 ## 10. Milestone 8 — Docker, documentation, release
 
 **Files.** `Dockerfile` (config dir, cache/output dirs + ownership, OCI labels, corrected entrypoint).
-`.dockerignore` (exclude `specs`, `docs`, `tests`, `.git`, `*.md` — currently only excludes
+`.dockerignore` (exclude `docs`, `tests`, `.git`, `*.md` — currently only excludes
 `node_modules dist coverage .env .cache output`). `.github/workflows/ci.yml` (the matrix) plus a new
-`container` job. `.github/workflows/release.yml` (build, sign image + manifest attestation, publish).
-`plugin.yaml` (real image digest replaces the placeholder). `package.json` (remove `private: true`; add
-`license`, `repository`, `bugs`, `homepage`; add `schemas`/`plugin.yaml` to `files`). `CHANGELOG.md`
-(first entry). `docs/docs/guide/{getting-started,configuration,troubleshooting}.md` (updates/new — the
-configuration guide documents `auth.allowGhCliTokenReuse` and its native-execution-only scope, §1.7).
+`container` job. `.github/workflows/release.yml` (new: version-consistency check, `npm publish
+--provenance`, image build and signing, GitHub Release with the tarball attached — §1.8).
+`plugin.yaml` (real image digest replaces the placeholder). `package.json` (the rename to
+`@subzerodev/plugins-github`, remove `private: true`, add `license`/`repository`/`bugs`/`homepage`/
+`publishConfig`, the three `bin` entries, `files`, and `prepublishOnly` — all specified in §1.8).
+`CHANGELOG.md` (first entry). `docs/docs/guide/{getting-started,configuration,troubleshooting}.md`
+(updates/new — getting-started leads with `npx`/`npm install -g` alongside Docker; the configuration
+guide documents `auth.allowGhCliTokenReuse` and its native-execution-only scope, §1.7).
 `docs/docs/reference/{schemas,cli,contract-conformance}.md` (updates). `tests/container/smoke.test.ts`.
-`tests/fixtures/cache/seeded/` (a committed cache the container `export` test mounts read-only).
+`tests/packaging/package-metadata.test.ts` (§1.8). `tests/fixtures/cache/seeded/` (a committed cache the
+container `export` test mounts read-only). Plus the rename touchpoints and new ADR from §1.8.
 
 **Dockerfile changes:**
 
@@ -960,20 +1093,24 @@ a `:ro` config mount without writing outside cache/output, `id -u` is never 0; t
 the seeded cache produce byte-identical artifacts and digests; a canary token appears nowhere,
 including `docker save` output; `npm run check` is green on `windows-latest` and `ubuntu-latest`;
 `package.json` no longer carries `private: true` and declares `license`/`repository`; the conformance
-page distinguishes locally asserted checks from shared-suite results.
+page distinguishes locally asserted checks from shared-suite results; plus every §1.8 packaging exit
+criterion — the tarball contents assertion, the four-way version-consistency check, and a verified
+zero-configuration `npx @subzerodev/plugins-github --help`.
 
 ---
 
 ## 11. Existing documents to update
 
-| Document                                                               | Change                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| ---------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `BUILD-PLAN.md`                                                        | Correct the "Current state" section — no CI matrix exists yet, no container job, no PR #11 in this repo's history; correct M8's premise; add a **Deferred** section — organization/contributed repositories, historical cache snapshots, per-repository output files, the shared conformance runner — each with a reversal condition. (`gh auth token` reuse is no longer deferred — see §1.7 — so it does **not** belong in this list.) |
-| `AGENTS.md`                                                            | Add `src/logging/` and `tools/` to the repository-layout block (new top-level directories this plan introduces)                                                                                                                                                                                                                                                                                                                          |
-| `docs/docs/reference/specification.md`                                 | Correct the request budget after M3.5's live observation; document the largest-remainder rounding rule and the `compareIdentity` total order                                                                                                                                                                                                                                                                                             |
-| `docs/docs/reference/cli.md`                                           | "Implemented today" columns updated milestone by milestone                                                                                                                                                                                                                                                                                                                                                                               |
-| `docs/docs/reference/contract-conformance.md`                          | Refreshed per milestone; separates locally-asserted from shared-suite results                                                                                                                                                                                                                                                                                                                                                            |
-| New: `docs/docs/decisions/adr-003-request-wrapper-and-http-testing.md` | Records rejecting `@octokit/plugin-throttling`, `@octokit/plugin-retry`, `p-limit`, `msw`, and `nock` (§1.2, §1.3), including the all-GETs argument for hand-rolled retry safety                                                                                                                                                                                                                                                         |
+| Document                                                                                                                                                                            | Change                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `BUILD-PLAN.md`                                                                                                                                                                     | Correct the "Current state" section — no CI matrix exists yet, no container job, no PR #11 in this repo's history; correct M8's premise; add a **Deferred** section — organization/contributed repositories, historical cache snapshots, per-repository output files, the shared conformance runner — each with a reversal condition. (`gh auth token` reuse is no longer deferred — see §1.7 — so it does **not** belong in this list.) |
+| `AGENTS.md`                                                                                                                                                                         | Add `src/logging/` and `tools/` to the repository-layout block (new top-level directories this plan introduces)                                                                                                                                                                                                                                                                                                                          |
+| `docs/docs/reference/specification.md`                                                                                                                                              | Correct the request budget after M3.5's live observation; document the largest-remainder rounding rule and the `compareIdentity` total order                                                                                                                                                                                                                                                                                             |
+| `docs/docs/reference/cli.md`                                                                                                                                                        | "Implemented today" columns updated milestone by milestone                                                                                                                                                                                                                                                                                                                                                                               |
+| `docs/docs/reference/contract-conformance.md`                                                                                                                                       | Refreshed per milestone; separates locally-asserted from shared-suite results                                                                                                                                                                                                                                                                                                                                                            |
+| New: `docs/docs/decisions/adr-003-request-wrapper-and-http-testing.md`                                                                                                              | Records rejecting `@octokit/plugin-throttling`, `@octokit/plugin-retry`, `p-limit`, `msw`, and `nock` (§1.2, §1.3), including the all-GETs argument for hand-rolled retry safety                                                                                                                                                                                                                                                         |
+| New: `docs/docs/decisions/adr-004-package-naming-and-distribution.md`                                                                                                               | Records the rename to `@subzerodev/plugins-github`, npmjs.com over GitHub Packages (the anonymous-read constraint), the third `bin` entry's purpose, and the upstream follow-up to correct the contract's name-mapping example (§1.8)                                                                                                                                                                                                    |
+| `docs/docs/reference/specification.md` (identity table), `AGENTS.md` (Naming section), `docs/docs/decisions/adr-001-hosting-and-versioning.md` (a new dated amendment, not an edit) | The `@subzerodev/plugin-github` → `@subzerodev/plugins-github` rename touchpoints (§1.8)                                                                                                                                                                                                                                                                                                                                                 |
 
 ## 12. PR sequence
 

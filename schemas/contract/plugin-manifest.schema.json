@@ -1,0 +1,275 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.subzerodev.com/plugin-manifest/1.0.0/plugin-manifest.schema.json",
+  "title": "SubZeroDev Plugin Manifest",
+  "description": "Normative manifest schema. The $id is version-pathed so publishing 1.1 or 2.0 cannot overwrite a pinned reference.",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "id",
+    "name",
+    "version",
+    "description",
+    "license",
+    "commands",
+    "runtimes",
+    "capabilities"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "$ref": "#/$defs/semver",
+      "description": "Contract schema version. A host refuses a higher major and accepts a higher minor."
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+([.-][a-z0-9]+)*$",
+      "description": "Globally stable plugin ID, e.g. subzerodev.github. Never reused for a different capability."
+    },
+    "name": { "type": "string", "minLength": 1 },
+    "version": { "$ref": "#/$defs/semver" },
+    "description": { "type": "string", "minLength": 1 },
+    "license": {
+      "type": "string",
+      "minLength": 1,
+      "description": "SPDX identifier, or a path to a license file."
+    },
+    "commands": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/command" }
+    },
+    "runtimes": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/runtime" }
+    },
+    "secrets": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/secret" }
+    },
+    "capabilities": { "$ref": "#/$defs/capabilities" },
+    "compatibility": { "$ref": "#/$defs/compatibility" }
+  },
+  "additionalProperties": true,
+
+  "$defs": {
+    "semver": {
+      "type": "string",
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$",
+      "description": "Semantic version. Rejects values such as 'banana' and '1.0' that the previous schema accepted."
+    },
+
+    "duration": {
+      "type": "string",
+      "pattern": "^P(?!$)(\\d+Y)?(\\d+M)?(\\d+W)?(\\d+D)?(T(?=\\d)(\\d+H)?(\\d+M)?(\\d+S)?)?$",
+      "description": "ISO-8601 duration, e.g. PT15M."
+    },
+
+    "relativePath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?![/\\\\])(?![A-Za-z]:)(?!.*(^|[/\\\\])\\.\\.([/\\\\]|$)).+$",
+      "description": "Relative path confined to its directory. Both separators are refused as a leading character and as traversal, because the contract supports Windows plugins: this rejects /etc/passwd, \\\\server\\share, C:\\secret, ../etc, and a\\..\\b alike."
+    },
+
+    "command": {
+      "type": "object",
+      "required": ["id", "description", "idempotency"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$" },
+        "description": { "type": "string", "minLength": 1 },
+        "inputSchema": { "$ref": "#/$defs/relativePath" },
+        "outputSchema": { "$ref": "#/$defs/relativePath" },
+        "timeout": { "$ref": "#/$defs/duration" },
+        "idempotency": {
+          "enum": ["idempotent", "conditional", "non-idempotent"],
+          "description": "An enumeration rather than a boolean, so 'conditional' can be stated rather than implied."
+        },
+        "idempotencyCondition": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Required when idempotency is 'conditional'. A retry policy cannot act on an unexplained 'sometimes'."
+        },
+        "artifacts": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/artifact" }
+        },
+        "additionalExitCodes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["code", "meaning"],
+            "properties": {
+              "code": { "type": "integer", "minimum": 7, "maximum": 113 },
+              "meaning": { "type": "string", "minLength": 1 }
+            },
+            "additionalProperties": false
+          },
+          "description": "Plugin-specific codes. Below 7 is reserved by the contract; 124 and 130 are reserved for timeout and cancellation."
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "idempotency": { "const": "conditional" } },
+            "required": ["idempotency"]
+          },
+          "then": {
+            "properties": {
+              "idempotencyCondition": { "type": "string", "minLength": 1 }
+            },
+            "required": ["idempotencyCondition"]
+          }
+        }
+      ],
+      "additionalProperties": true
+    },
+
+    "artifact": {
+      "type": "object",
+      "required": ["name", "path", "mediaType"],
+      "properties": {
+        "name": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$" },
+        "path": { "$ref": "#/$defs/relativePath" },
+        "mediaType": { "type": "string", "minLength": 1 },
+        "schemaRef": { "$ref": "#/$defs/relativePath" },
+        "required": { "type": "boolean", "default": false }
+      },
+      "additionalProperties": false
+    },
+
+    "runtime": {
+      "type": "object",
+      "required": ["id", "type"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "type": {
+          "enum": [
+            "docker",
+            "process",
+            "dotnet",
+            "node",
+            "python",
+            "powershell",
+            "remote"
+          ],
+          "description": "Closed set. An unknown runtime type is refused, because it cannot be executed."
+        },
+        "image": { "type": "string" },
+        "digest": {
+          "type": "string",
+          "pattern": "^sha256:[a-f0-9]{64}$",
+          "description": "Immutable image pin. Required for non-development docker runtimes; a version tag is mutable."
+        },
+        "entrypoint": { "type": "array", "items": { "type": "string" } },
+        "packagePath": { "type": "string" },
+        "development": {
+          "type": "boolean",
+          "default": false,
+          "description": "Marks a runtime as development-only, which relaxes the digest requirement."
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": { "const": "docker" },
+              "development": { "const": false, "default": false }
+            },
+            "required": ["type"]
+          },
+          "then": {
+            "properties": {
+              "image": { "type": "string", "minLength": 1 },
+              "digest": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" }
+            },
+            "required": ["image", "digest"]
+          }
+        }
+      ],
+      "additionalProperties": true
+    },
+
+    "secret": {
+      "type": "object",
+      "required": ["id", "required", "environmentVariable"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$" },
+        "required": { "type": "boolean" },
+        "environmentVariable": {
+          "type": "string",
+          "pattern": "^[A-Z_][A-Z0-9_]*$",
+          "description": "Secrets are injected by environment variable only. Never argv, never the config file."
+        },
+        "description": { "type": "string" },
+        "sensitive": { "type": "boolean", "default": true }
+      },
+      "additionalProperties": false
+    },
+
+    "capabilities": {
+      "type": "object",
+      "description": "The security surface. additionalProperties is false so an unrecognized permission is refused rather than silently ungranted.",
+      "properties": {
+        "network": {
+          "type": "object",
+          "properties": {
+            "required": { "type": "boolean" },
+            "destinations": {
+              "type": "array",
+              "items": { "type": "string", "minLength": 1 },
+              "description": "Hostnames or CIDR ranges. Absent means all destinations, which policy may refuse."
+            }
+          },
+          "required": ["required"],
+          "additionalProperties": false
+        },
+        "filesystem": {
+          "type": "object",
+          "properties": {
+            "read": { "$ref": "#/$defs/filesystemScopes" },
+            "write": { "$ref": "#/$defs/filesystemScopes" }
+          },
+          "additionalProperties": false
+        },
+        "processExecution": { "type": "boolean", "default": false },
+        "dockerAccess": { "type": "boolean", "default": false },
+        "elevatedPrivileges": { "type": "boolean", "default": false },
+        "devices": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "filesystemScopes": {
+      "type": "array",
+      "items": { "enum": ["config", "cache", "output", "workspace"] },
+      "uniqueItems": true,
+      "description": "Named scopes only. A plugin cannot request an arbitrary host path."
+    },
+
+    "compatibility": {
+      "type": "object",
+      "properties": {
+        "minimumAutomatorVersion": { "$ref": "#/$defs/semver" },
+        "operatingSystems": {
+          "type": "array",
+          "items": { "enum": ["linux", "windows", "macos"] },
+          "uniqueItems": true
+        },
+        "architectures": {
+          "type": "array",
+          "items": { "enum": ["amd64", "arm64"] },
+          "uniqueItems": true
+        },
+        "requiredTools": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

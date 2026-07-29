@@ -179,6 +179,13 @@ corrupt cache, and export failure; help text and README match actual options.
 - [ ] Packaging blockers cleared: `private: true` blocks publish, and neither `license` nor
       `repository` is declared. A `LICENSE` file already exists at the repository root but is not
       mirrored into `package.json`
+- [ ] **npm package published to npmjs.com** as `@subzerodev/plugins-github`, with the tarball also
+      attached to the GitHub Release, and `npx @subzerodev/plugins-github` working with no `.npmrc`
+      configured (`IMPLEMENTATION-PLAN.md` §1.8). GitHub Packages is deliberately not the primary
+      registry — it has no anonymous npm read, which would break `npx` for everyone
+- [ ] **Package renamed** from `@subzerodev/plugin-github` to `@subzerodev/plugins-github`, mirroring
+      the repository name. This settles ecosystem work item X14 for this plugin, which asked for naming
+      to be fixed before first publish — the touchpoints and the ADR are listed in §1.8
 - [x] Coverage gates a release — **decided**: `@vitest/coverage-v8`, enforced in `npm run check`
       starting at Milestone 1 (`IMPLEMENTATION-PLAN.md` §1.2)
 - [ ] Decide whether `npm audit` gates a release
@@ -186,7 +193,9 @@ corrupt cache, and export failure; help text and README match actual options.
 **Release gate:** `npm ci && npm run check` on Windows and Linux; image runs non-root with writable
 mounts, exercised both as UID 10001 and under the host-user override; fixture flow runs
 `validate → sync → list → stats → export`; a second unchanged sync demonstrates cache reuse; output
-validates and is byte-identical on repeat; no secret canary anywhere.
+validates and is byte-identical on repeat; no secret canary anywhere; `package.json`, `plugin.yaml`,
+the git tag, and the image's version label all state the same version, and a mismatch fails the release
+rather than shipping four artifacts that disagree.
 
 ## Pull request sequence
 
