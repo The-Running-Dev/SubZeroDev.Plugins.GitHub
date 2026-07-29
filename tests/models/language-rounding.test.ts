@@ -18,6 +18,18 @@ describe('language percentage allocation', () => {
     expect(languages.reduce((total, language) => total + language.percentage, 0)).toBe(100);
   });
 
+  it('breaks byte ties by code unit, not by locale collation', () => {
+    // Real GitHub language names. Under a locale-aware collation `wisp` sorts
+    // before `XML`; by code unit it sorts after. Equal bytes force the tiebreak,
+    // so this asserts which comparator is in use.
+    const languages = distributeLanguagePercentages([
+      { name: 'wisp', bytes: 10 },
+      { name: 'XML', bytes: 10 },
+    ]);
+
+    expect(languages.map((language) => language.name)).toEqual(['XML', 'wisp']);
+  });
+
   it('keeps zero-byte distributions deterministic', () => {
     expect(
       distributeLanguagePercentages([

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { nonEmptyStringSchema, nonNegativeIntegerSchema } from './primitives.js';
+import { compareCodeUnits, nonEmptyStringSchema, nonNegativeIntegerSchema } from './primitives.js';
 
 const percentageSchema = z.number().min(0).max(100).multipleOf(0.01);
 
@@ -66,5 +66,9 @@ function compareLanguageEntries(
   b: Pick<LanguageByteCount, 'bytes' | 'name'>,
 ): number {
   if (a.bytes !== b.bytes) return b.bytes - a.bytes;
-  return a.name.localeCompare(b.name);
+  // Code units, not `localeCompare` — see compareCodeUnits. GitHub has
+  // lowercase-initial language names (`wisp`, `nesC`, `eC`, `sed`), and under a
+  // locale-aware collation those invert against capitalised ones, so the emitted
+  // order of `languages[]` would depend on the runner's locale.
+  return compareCodeUnits(a.name, b.name);
 }

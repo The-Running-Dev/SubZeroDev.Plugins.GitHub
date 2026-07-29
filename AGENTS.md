@@ -69,6 +69,15 @@ conformance suite forces `trace` before checking stdout.
 a directory — it is not atomic on Windows and fails when the destination exists. Verify this on
 Windows, not only on Linux.
 
+**Never `localeCompare` for anything that reaches serialized output.** Sort with
+`compareCodeUnits` from `src/models/primitives.ts`. `localeCompare` resolves against the
+environment's default locale, so its answer varies with `LANG` and with the ICU data a Node build
+ships — `'aa'.localeCompare('ab')` is `-1` under `en` and `+1` under `da`, and GitHub's
+lowercase-initial language names (`wisp`, `nesC`, `eC`, `sed`) invert against capitalised ones.
+Output byte-stability must not depend on who ran the command. Tests covering only same-case ASCII
+will not catch this, which is why `tests/models/identity.test.ts` pins the inverting pairs
+explicitly.
+
 ## Architecture and ownership boundaries
 
 - Preserve ownership boundaries between repositories, layers, and services.
