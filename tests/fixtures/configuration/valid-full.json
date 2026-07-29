@@ -1,0 +1,26 @@
+{
+  "configVersion": "1.0.0",
+  "auth": { "tokenEnvironmentVariable": "SUBZERODEV_GITHUB_TOKEN", "allowGhCliTokenReuse": true },
+  "repositories": {
+    "includeForks": true,
+    "includeArchived": false,
+    "includeTemplates": false,
+    "includeDisabled": false,
+    "includePrivate": true,
+    "includePublic": true,
+    "includeSlugs": ["the-running-dev/*"],
+    "excludeSlugs": ["the-running-dev/scratch"]
+  },
+  "collection": { "profile": "detailed" },
+  "directories": { "cache": "../shared-cache", "output": "artifacts/output" },
+  "output": { "formats": ["json"], "retainRawResponses": true },
+  "budget": {
+    "concurrency": 8,
+    "warnAtPercentConsumed": 40,
+    "stopAtPercentConsumed": 80,
+    "searchRequestsPerMinute": 10,
+    "statisticsRetryAttempts": 5,
+    "statisticsRetryBaseMilliseconds": 500
+  },
+  "documentation": { "urlTemplate": "https://{owner}.github.io/{name}/" }
+}

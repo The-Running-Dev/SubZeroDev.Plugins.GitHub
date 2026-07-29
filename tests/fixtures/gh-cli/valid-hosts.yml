@@ -1,0 +1,4 @@
+github.com:
+  user: the-running-dev
+  oauth_token: gho_fixture_token_value_not_real
+  git_protocol: https

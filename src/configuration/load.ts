@@ -23,6 +23,8 @@ export async function loadConfiguration(
   } catch (error) {
     throw new ConfigurationError(
       `Could not read configuration at ${absolutePath}: ${error instanceof Error ? error.message : String(error)}`,
+      [],
+      'config_unreadable',
     );
   }
 
@@ -35,7 +37,16 @@ export async function loadConfiguration(
   } catch (error) {
     if (error instanceof ZodError) {
       const issue = error.issues[0];
-      throw new ConfigurationError(issue?.message ?? 'Configuration is invalid', issue?.path ?? []);
+      const path = issue?.path ?? [];
+      throw new ConfigurationError(
+        `${absolutePath}: ${issue?.message ?? 'Configuration is invalid'}${
+          path.length > 0 ? ` (at ${path.map(String).join('.')})` : ''
+        }`,
+        path,
+        // A version this reader cannot accept is a different situation from a key it
+        // does not recognise: only one of them is fixed by regenerating the file.
+        path[0] === 'configVersion' ? 'config_version_unsupported' : 'config_invalid',
+      );
     }
     throw error;
   }
