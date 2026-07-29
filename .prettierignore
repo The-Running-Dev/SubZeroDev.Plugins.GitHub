@@ -10,6 +10,12 @@ build
 schemas/contract/plugin-manifest.schema.json
 schemas/contract/result-envelope.schema.json
 
+# Deliberately unparseable fixtures. Being invalid is what they assert — the loader
+# must report them as a stable error rather than crash — so a formatter cannot read
+# them, and formatting them would destroy the property under test.
+tests/fixtures/configuration/malformed.json
+tests/fixtures/gh-cli/malformed.yml
+
 docs.ps1
 docs/Dockerfile
 docs/docusaurus.config.ts

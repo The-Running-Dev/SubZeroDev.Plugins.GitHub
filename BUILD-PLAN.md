@@ -20,14 +20,15 @@ The plugin exists and is green: a Node.js 24+, strict TypeScript, ESM package wi
 carrying the Phase One command names, a minimal versioned `Project` schema, a provider-independent
 boundary, Vitest, ESLint, Prettier, and Docker.
 
-The commands intentionally return "not implemented". No GitHub API, configuration, synchronization,
-cache, export, or statistics behaviour exists yet.
+The commands intentionally return "not implemented". Configuration loading, token resolution, logging,
+and the domain models exist; no GitHub API, synchronization, cache, export, or statistics behaviour
+does.
 
-**Milestone 0 is pending CI observation.** The `[ubuntu-latest, windows-latest]` matrix and
-`fail-fast: false` are configured in this branch, but a green Windows run has not yet been observed.
-The container job remains a Milestone 8 deliverable. This repository's git history does not contain a
-PR #11; an earlier version of this section claimed both a PR and a completed Windows run, which was
-wrong.
+**Milestone 0 is complete.** The `[ubuntu-latest, windows-latest]` matrix with `fail-fast: false` is
+configured and has now been observed green on both legs. The container job remains a Milestone 8
+deliverable, and does not yet exist. An earlier version of this section cited a PR #11 and a completed
+Windows run before either had happened; the run is now real, and the PR number was never in this
+repository's history.
 
 ## Ordering principle
 
@@ -48,20 +49,25 @@ deliberate departures from that, both de-risking:
 - [x] Installed-entry-point test made portable, probing symlink support and skipping where the
       platform forbids it
 - [x] `[ubuntu-latest, windows-latest]` CI matrix, `fail-fast: false`, defaulting to bash
-- [ ] Matrix check suite observed green on both Windows and Linux
+- [x] Matrix check suite observed green on both Windows and Linux
 - [x] CLI exit codes defined, `1` reserved for uncaught exceptions
 
-## Milestone 1 — Domain contracts and canonical schemas
+## Milestone 1 — Domain contracts and canonical schemas — **not complete**
 
-- [ ] Versioned `Project`, `Repository`, `LanguageStatistics`, `Release`, `ReleaseAsset`, `Branch`,
+- [x] Versioned `Project`, `Repository`, `LanguageStatistics`, `Release`, `ReleaseAsset`, `Branch`,
       `Contributor`, `RepositoryStatistics`, `Summary`, and the top-level documents
-- [ ] Provider-namespaced identity on GitHub's immutable numeric ID, with `owner` and `name` as
+- [x] Provider-namespaced identity on GitHub's immutable numeric ID, with `owner` and `name` as
       mutable metadata
-- [ ] Schema-version compatibility check: accept same major, reject otherwise
-- [ ] Zod schemas as the source of truth, preferring `null` over `.optional()` for serialized fields
+- [x] Schema-version compatibility check: accept same major, reject otherwise
+- [x] Zod schemas as the source of truth, preferring `null` over `.optional()` for serialized fields
+- [x] One total order, `compareIdentity`, over UTF-16 code units — never `localeCompare`, whose answer
+      varies with the environment's locale
+- [ ] **Fixtures: minimum, complete, private, archived, fork, template, Unicode.** `tests/fixtures/projects/`
+      does not exist, so the round-trip and invalid-fixture exit criteria below are unproven
 - [ ] `projects.schema.json` generated with `z.toJSONSchema()` — do not add `zod-to-json-schema`,
-      which targets Zod 3
-- [ ] Fixtures: minimum, complete, private, archived, fork, template, Unicode
+      which targets Zod 3. **Sequenced to Milestone 6** (`IMPLEMENTATION-PLAN.md` §8), which owns the
+      generator and the drift test; it is listed here only because the schemas it generates from are
+      defined here
 
 **Exit:** valid fixtures round-trip without semantic change; invalid versions, timestamps, URLs,
 percentages, and duplicate IDs fail with useful paths; a renamed repository resolves to the same
@@ -70,18 +76,41 @@ in a domain model.
 
 ## Milestone 2 — Ports, configuration, and secret safety
 
-- [ ] Versioned `github.config.json`: filters, collection profile, directories, formats,
+- [x] Versioned `github.config.json`: filters, collection profile, directories, formats,
       concurrency, request budget, token variable name
-- [ ] Precedence and config-relative path resolution per the contract
-- [ ] Provider-neutral discovery and detail-fetch contracts carrying rate-limit and partial-failure
-      results
-- [ ] Clock, logger, cache, and serializer interfaces
-- [ ] Pino constructed against **stderr**, with redaction for authorization headers, token fields,
+- [x] Config-relative path resolution per the contract, and stable error codes on every refusal
+- [x] Clock, sleeper, filesystem, and logger interfaces
+- [x] Pino constructed against **stderr**, with redaction for authorization headers, token fields,
       request errors, and nested causes
+- [x] Token resolution, registering the value for redaction where it enters the process; opt-in
+      GitHub CLI reuse by credential-file read, so no `processExecution` capability is needed
+- [x] Provider-neutral `RepositoryProvider` port, `Outcome<T, E>`, and a `ProviderError` carrying the
+      `code`, `subject`, `retryable`, and `status` the result envelope requires
 
-**Exit:** the configuration schema cannot represent a raw token; malformed and incompatible config
-produce stable errors and exit codes; secret canary tests prove tokens reach no stdout, stderr, log,
-or serialized error.
+**Exit:** the configuration schema has no field a token value could occupy, enforced by a test that
+walks the schema rather than by convention; a configuration carrying a token, an unknown key, an
+unsupported version, or malformed JSON each produces a stable `code`; paths inside a configuration
+file resolve relative to that file with the working directory set elsewhere; a registered canary
+appears in no log message, structured field, bound child field, serialized error, stack, or
+three-deep `.cause` chain, and `process.stdout.write` is never called while logging at `trace`.
+
+### Moved out of this milestone
+
+Four items were listed here and are sequenced later in `IMPLEMENTATION-PLAN.md`, which is the more
+considered ordering — each of these needs something Milestone 2 does not build. They were moved
+rather than left to be ticked on partial evidence:
+
+| Item                                                   | Now in                       | Why it cannot land here                                          |
+| ------------------------------------------------------ | ---------------------------- | ---------------------------------------------------------------- |
+| Option precedence: CLI → environment → file → default  | M3.5 (`§1.6`)                | Needs the two-stage argument parser and the global-options table |
+| Mapping configuration failures onto process exit codes | M7 (`§9`)                    | Needs the command layer that owns the single exit-code mapping   |
+| `CacheStore` interface                                 | M3.5 minimal, M5 full (`§7`) | Its shape depends on resource keys and cache reconciliation      |
+| Serializer interface                                   | M6 (`§8`)                    | Its shape depends on the canonical document set it serializes    |
+
+`CollectionResult` and `DiscoveredRepository` remain deliberate stubs for the same reason: carrying
+rate-limit and partial-failure results means carrying per-resource ETags and a rate-limit snapshot,
+which are Milestone 3 and Milestone 5 concepts. Fleshing them out now would mean guessing at shapes
+those milestones then have to change.
 
 ## Milestone 3 — GitHub adapter and repository discovery
 

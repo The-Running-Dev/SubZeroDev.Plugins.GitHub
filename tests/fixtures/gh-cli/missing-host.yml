@@ -1,0 +1,3 @@
+gitlab.example.com:
+  user: someone
+  oauth_token: gl_not_github

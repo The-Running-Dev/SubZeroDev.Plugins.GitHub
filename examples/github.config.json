@@ -1,0 +1,39 @@
+{
+  "configVersion": "1.0.0",
+  "auth": {
+    "tokenEnvironmentVariable": "GITHUB_TOKEN",
+    "allowGhCliTokenReuse": false
+  },
+  "repositories": {
+    "includeForks": false,
+    "includeArchived": true,
+    "includeTemplates": true,
+    "includeDisabled": true,
+    "includePrivate": true,
+    "includePublic": true,
+    "includeSlugs": [],
+    "excludeSlugs": []
+  },
+  "collection": {
+    "profile": "standard"
+  },
+  "directories": {
+    "cache": ".cache",
+    "output": "output"
+  },
+  "output": {
+    "formats": ["json", "yaml"],
+    "retainRawResponses": false
+  },
+  "budget": {
+    "concurrency": 4,
+    "warnAtPercentConsumed": 50,
+    "stopAtPercentConsumed": 90,
+    "searchRequestsPerMinute": 20,
+    "statisticsRetryAttempts": 3,
+    "statisticsRetryBaseMilliseconds": 1000
+  },
+  "documentation": {
+    "urlTemplate": null
+  }
+}
