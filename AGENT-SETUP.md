@@ -24,7 +24,7 @@ Apply these defaults without asking the user to repeat them:
 | Decision             | Default                                                             |
 | -------------------- | ------------------------------------------------------------------- |
 | GitHub owner         | Existing remote owner; otherwise the authenticated `gh` account     |
-| Visibility           | Public for a new remote; preserve an existing remote's visibility   |
+| Visibility           | Private for a new remote; preserve an existing remote's visibility  |
 | Default branch       | `main`                                                              |
 | License              | MIT for a new unlicensed repository; preserve an existing license   |
 | Documentation        | Generate it from the repository's real source and behavior          |
@@ -56,13 +56,16 @@ GitHub Pages URL instead of blocking the entire setup.
 
 ## Execution authority
 
-The user's instruction to execute this file authorizes the agent to perform the
-following work for the named repository:
+The user's instruction to execute this file requests the following scope for
+the named repository. It authorizes the local inspection and preparation
+needed to carry out the work, but external writes remain subject to the
+confirmation checkpoint below:
 
 - inspect and modify local repository files;
 - initialize Git when needed;
 - create focused commits;
-- create a new public GitHub repository when no remote exists;
+- create a new GitHub repository when no remote exists, private by default
+  unless the user explicitly requests public visibility;
 - add an MIT license when no license exists;
 - push the initial branch and subsequent setup branch;
 - create and update a pull request;
@@ -79,6 +82,29 @@ documentation hostname. It does not authorize deleting an existing repository,
 rewriting published history, deleting branches, replacing unrelated DNS
 records, publishing packages, changing companion repositories, exposing
 secrets, or discarding user work.
+
+This controller never overrides workspace or repository governance. If any
+applicable instruction requires more specific approval for an external write,
+follow the stricter rule. The repository's standing `AGENTS.md` and higher-level
+instructions take precedence over this reusable controller.
+
+### External-write confirmation checkpoint
+
+Before creating a repository, changing visibility, pushing, opening or merging
+a pull request, changing DNS, configuring or deploying Pages, changing branch
+protection, or performing another external write:
+
+1. Resolve the exact account, repository, branch, domain, and setting affected.
+2. Summarize the external actions as one concise, bounded batch.
+3. Check all applicable workspace and repository guidance for stricter approval
+   requirements.
+4. Ask for explicit confirmation and wait before proceeding.
+
+The checkpoint may be skipped only when the governing instructions explicitly
+state that invoking this controller is sufficient authorization for those exact
+external actions. General permission to perform setup does not override a
+stricter approval rule, and confirmation for one batch does not authorize
+unrelated external changes.
 
 Stop and ask one concise question only when discovery cannot safely resolve a
 material conflict, such as:
@@ -287,11 +313,18 @@ If no GitHub remote exists:
 
 1. Confirm the exact owner from the authenticated account.
 2. Check that `OWNER/REPOSITORY_NAME` does not already contain unrelated work.
-3. Create the public repository without auto-generated files that would
-   conflict with the local tree.
-4. Set its description from the verified README summary.
-5. Set the default branch to `main`.
-6. Push the baseline `main`, then push the setup branch.
+3. Select private visibility by default.
+4. Run the external-write confirmation checkpoint for repository creation and
+   the initial pushes. If the user wants public visibility, the confirmation
+   must explicitly name the repository, state that its code and history will
+   become public, and approve public creation.
+5. Create the repository without auto-generated files that would conflict with
+   the local tree, using private visibility unless public visibility was
+   explicitly confirmed.
+6. Set its description from the verified README summary.
+7. Set the default branch to `main`.
+8. Push the baseline `main`, then push the setup branch, only within the
+   confirmed external-write batch.
 
 If a remote exists, fetch it and reconcile by fast-forward or an ordinary
 merge. Never force-push or replace remote history.
