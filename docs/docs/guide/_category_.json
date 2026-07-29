@@ -1,0 +1,9 @@
+{
+  "label": "Using the plugin",
+  "position": 2,
+  "link": {
+    "type": "generated-index",
+    "slug": "/guide",
+    "description": "Install the plugin, run it locally, and run it in a container."
+  }
+}

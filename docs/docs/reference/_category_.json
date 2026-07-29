@@ -1,0 +1,9 @@
+{
+  "label": "Reference",
+  "position": 3,
+  "link": {
+    "type": "generated-index",
+    "slug": "/reference",
+    "description": "The command surface, the plugin specification, and where the implementation stands against the plugin contract."
+  }
+}

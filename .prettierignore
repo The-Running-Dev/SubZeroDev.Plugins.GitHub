@@ -2,6 +2,7 @@ dist
 coverage
 .config
 build
+specs
 docs.ps1
 docs/Dockerfile
 docs/docusaurus.config.ts

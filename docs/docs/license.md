@@ -1,7 +1,7 @@
 ---
 title: License
 description: MIT license for the SubZeroDev GitHub Plugin.
-sidebar_position: 6
+sidebar_position: 7
 ---
 
 # License

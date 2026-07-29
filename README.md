@@ -3,18 +3,47 @@
 CLI-first GitHub integration plugin that transforms GitHub repository data into
 provider-independent, versioned project models.
 
-The plugin lives in this repository but does not depend on the workstation
-toolkit or a future automation runtime.
+This is the **first** plugin under the SubZeroDev plugin contract, and the reference
+implementation the others are scaffolded from. The plugin lives in this repository but
+does not depend on the workstation toolkit or a future automation runtime.
 
 ## Documentation
 
 The complete documentation is published at
 [plugins-github.subzerodev.com/docs/](https://plugins-github.subzerodev.com/docs/):
 
-- [Getting started](https://plugins-github.subzerodev.com/docs/getting-started)
-- [CLI reference](https://plugins-github.subzerodev.com/docs/cli-reference)
+- [Getting started](https://plugins-github.subzerodev.com/docs/guide/getting-started)
+- [Running in Docker](https://plugins-github.subzerodev.com/docs/guide/docker)
+- [CLI reference](https://plugins-github.subzerodev.com/docs/reference/cli)
+- [GitHub plugin specification](https://plugins-github.subzerodev.com/docs/reference/specification)
 - [Architecture](https://plugins-github.subzerodev.com/docs/architecture)
+- [Decisions](https://plugins-github.subzerodev.com/docs/decisions/)
 - [Development guide](https://plugins-github.subzerodev.com/docs/development)
+
+See
+[`BUILD-PLAN.md`](https://github.com/The-Running-Dev/SubZeroDev.Plugins.GitHub/blob/main/BUILD-PLAN.md)
+for the milestone sequence and current status.
+
+## Run it yourself
+
+The plugin runs standalone. No orchestrator, no host, no service — a token in the
+environment, a configuration file, and a terminal:
+
+```bash
+export GITHUB_TOKEN=…          # secrets arrive by environment variable, never on the command line
+subzerodev-github validate
+subzerodev-github sync
+subzerodev-github list
+```
+
+The Automator can run it later on a schedule, with history and approvals around it. That is an
+integration layer, not a prerequisite.
+
+## Identity
+
+A repository's identity is GitHub's **immutable numeric ID**. `owner/name` is mutable metadata. A
+rename or a transfer therefore resolves to the same repository rather than to a deletion and a new
+arrival.
 
 ## Development
 
@@ -53,7 +82,9 @@ Build and run the local CLI. Positional arguments are passed to the CLI. Use
 > **The five commands are not implemented yet.** `sync`, `list`, `stats`,
 > `export`, and `validate` currently print a message and exit `3`, and `run.ps1`
 > surfaces that as a failed command. That is the scaffold reporting honestly, not
-> a broken install. Only `--help` and `--version` do real work today.
+> a broken install. Only `--help` and `--version` do real work today. The plugin
+> contract additionally requires a `manifest` command; it does not exist yet
+> either — see the [CLI reference](https://plugins-github.subzerodev.com/docs/reference/cli).
 
 Build the Docker image and run the CLI:
 
@@ -70,41 +101,9 @@ $env:GITHUB_TOKEN = 'github_pat_replace_me'
 ./run.ps1 -Mode Docker -BuildImage sync
 ```
 
-This is the shape the command will take. `sync` exits `3` until Milestone 3.5
-implements it.
-
-Docker mode mounts `.cache/` at `/data/cache` and `output/` at `/data/output`.
-Override them with `-CachePath` and `-OutputPath`. Reuse an existing image by
-omitting `-BuildImage`, or select another tag with `-ImageName`.
-
-The image runs as UID 10001, so bind-mounted host directories owned by another
-user are not writable. On Linux the runner therefore passes the current host
-user by default. Override it with `-DockerUser`, or set it explicitly when
-invoking Docker directly:
-
-```bash
-docker run --rm --user "$(id -u):$(id -g)" \
-  --volume "$PWD/.cache:/data/cache" \
-  --volume "$PWD/output:/data/output" \
-  subzerodev-github:local validate
-```
-
-Docker Desktop on macOS and Windows maps ownership automatically, so no
-`--user` flag is needed there.
-
-### Direct Docker commands
-
-The equivalent commands without the PowerShell wrapper are:
-
-```bash
-docker build -t subzerodev-github:local .
-docker run --rm subzerodev-github:local --help
-docker run --rm \
-  --env GITHUB_TOKEN \
-  --volume "$PWD/.cache:/data/cache" \
-  --volume "$PWD/output:/data/output" \
-  subzerodev-github:local sync
-```
+This is the shape the command will take. `sync` exits `3` until Milestone 3.5 implements it. See
+[Running in Docker](https://plugins-github.subzerodev.com/docs/guide/docker) for the mounts, the
+non-root user, and the direct `docker run` commands without the PowerShell wrapper.
 
 ## CLI
 
@@ -120,19 +119,19 @@ Command behavior is implemented milestone by milestone. The current scaffold
 establishes the runner and a stable command surface; each command prints a
 message and exits `3` until its milestone lands.
 
-Exit codes are fixed now so callers can rely on them:
+Exit codes, required options, and the not-yet-implemented `manifest` command are documented once, in
+the [CLI reference](https://plugins-github.subzerodev.com/docs/reference/cli) — the plugin contract
+is their canonical source, and this repository does not keep a second copy of that table.
 
-| Code | Meaning                               |
-| ---- | ------------------------------------- |
-| `0`  | Success                               |
-| `2`  | Usage or validation error             |
-| `3`  | Operational failure                   |
-| `4`  | Partial synchronization               |
-| `5`  | Authentication or authorization error |
-| `6`  | Rate-limited before completion        |
+## Status
 
-`1` is unused, so an uncaught exception stays distinguishable from a handled
-failure.
+Milestone 0 is complete: the package builds, the CLI carries the Phase One command
+names, and the full check suite is green on Windows and Linux. The commands
+intentionally return "not implemented" — no GitHub API, cache, or export behaviour
+exists yet.
+
+[`BUILD-PLAN.md`](https://github.com/The-Running-Dev/SubZeroDev.Plugins.GitHub/blob/main/BUILD-PLAN.md)
+says what comes next and in what order.
 
 ## License
 
