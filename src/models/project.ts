@@ -1,12 +1,28 @@
 import { z } from 'zod';
 
-export const SCHEMA_VERSION = '1.0.0' as const;
+import { diagnosticSchema } from './diagnostics.js';
+import { languageStatisticsSchema } from './language.js';
+import { portfolioOverrideSchema } from './portfolio.js';
+import { repositorySchema } from './repository.js';
+import { releaseSummarySchema } from './release.js';
+import { SCHEMA_VERSION, schemaVersionSchema } from './schema-version.js';
+import { contributorSummarySchema } from './contributor.js';
+import { repositoryStatisticsSchema } from './statistics.js';
 
 export const projectSchema = z.object({
-  schemaVersion: z.literal(SCHEMA_VERSION),
-  id: z.string().min(1),
-  name: z.string().min(1),
-  provider: z.string().min(1),
+  schemaVersion: schemaVersionSchema,
+  repository: repositorySchema,
+  technology: z.object({
+    primaryLanguage: z.string().nullable(),
+    languages: z.array(languageStatisticsSchema),
+  }),
+  statistics: repositoryStatisticsSchema,
+  releases: releaseSummarySchema,
+  contributors: contributorSummarySchema,
+  portfolio: portfolioOverrideSchema,
+  diagnostics: z.array(diagnosticSchema),
 });
 
 export type Project = z.infer<typeof projectSchema>;
+
+export { SCHEMA_VERSION };

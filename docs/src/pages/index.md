@@ -130,10 +130,10 @@ is their canonical source, and this repository does not keep a second copy of th
 
 ## Status
 
-Milestone 0 is complete: the package builds, the CLI carries the Phase One command
-names, and the full check suite is green on Windows and Linux. The commands
-intentionally return "not implemented" — no GitHub API, cache, or export behaviour
-exists yet.
+Milestone 0 is nearly complete: the package builds, the CLI carries the Phase One
+command names, and CI is configured to run its full suite on Windows and Linux. A
+successful Windows CI run is still pending. The commands intentionally return "not
+implemented" — no GitHub API, cache, or export behaviour exists yet.
 
 [`BUILD-PLAN.md`](https://github.com/The-Running-Dev/SubZeroDev.Plugins.GitHub/blob/main/BUILD-PLAN.md)
 says what comes next and in what order.
