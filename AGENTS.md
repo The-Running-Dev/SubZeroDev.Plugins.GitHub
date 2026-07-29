@@ -107,6 +107,11 @@ inspecting the current published digest.
 
 ## Repository bootstrap decisions
 
+`AGENT-SETUP.md` is a reusable bootstrap template, not standing execution
+authority. Apply it only when the user explicitly invokes it. This file and any
+higher-level workspace instructions continue to govern its execution,
+including approval requirements for external writes.
+
 Before making structural changes to a new or partially initialized repository,
 confirm:
 
