@@ -14,7 +14,12 @@ export { portfolioOverrideSchema } from './portfolio.js';
 export { projectSchema } from './project.js';
 export { repositorySchema } from './repository.js';
 export { releaseAssetSchema, releaseSchema, releaseSummarySchema } from './release.js';
-export { SCHEMA_VERSION, schemaVersionSchema } from './schema-version.js';
+export {
+  checkSchemaVersion,
+  describeSchemaCompatibility,
+  SCHEMA_VERSION,
+  schemaVersionSchema,
+} from './schema-version.js';
 export { repositoryStatisticsSchema } from './statistics.js';
 export { summarySchema } from './summary.js';
 
@@ -29,7 +34,7 @@ export type { Project } from './project.js';
 export type { Repository, RepositoryVisibility, ProjectStatus } from './repository.js';
 export type { Release, ReleaseAsset, ReleaseSummary } from './release.js';
 export type { IssueSummary, PullRequestSummary, RepositoryStatistics } from './statistics.js';
-export type { SchemaVersion } from './schema-version.js';
+export type { SchemaCompatibility, SchemaVersion } from './schema-version.js';
 export type {
   ProjectsDocument,
   StatisticsDocument,

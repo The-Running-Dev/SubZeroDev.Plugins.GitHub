@@ -15,6 +15,18 @@ export const summaryDocumentSchema = z.object({
   summary: summarySchema,
 });
 
+/**
+ * **Provisional.** `statistics.json` and `summary.json` are separate documents in the
+ * specification's output set, but the aggregate model that distinguishes them —
+ * commit, contributor, issue, and pull-request totals across the portfolio — is not
+ * built until Milestone 4 introduces `aggregate.ts`. Until then this document
+ * deliberately carries the summary shape rather than a guessed one.
+ *
+ * Reusing `summarySchema` here is therefore a placeholder, not a statement that the
+ * two documents are the same. When Milestone 4 lands, `statistics` takes the
+ * aggregate schema and this comment goes away; a golden-file test will catch the
+ * change, which is the intent.
+ */
 export const statisticsDocumentSchema = z.object({
   schemaVersion: schemaVersionSchema,
   statistics: summarySchema,

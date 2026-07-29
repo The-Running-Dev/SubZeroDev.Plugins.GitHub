@@ -18,8 +18,12 @@ export interface LanguageByteCount {
 }
 
 /**
- * Uses largest-remainder allocation on 10,000 basis points. The resulting
- * percentages always total exactly 100.00 and have a stable ordering.
+ * Uses largest-remainder allocation on 10,000 basis points, so percentages total
+ * exactly 100.00 whenever there are bytes to distribute. A distribution whose bytes
+ * are all zero is the one exception: it totals 0.00, because there is no share to
+ * apportion and inventing one would misreport an empty repository.
+ *
+ * Ordering is stable: bytes descending, then name by code unit.
  */
 export function distributeLanguagePercentages(
   byteCounts: readonly LanguageByteCount[],

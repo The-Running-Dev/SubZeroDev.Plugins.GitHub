@@ -9,11 +9,22 @@ export const nonEmptyStringSchema = z.string().min(1);
 export const nullableStringSchema = z.string().nullable();
 export const urlSchema = z.url();
 export const nullableUrlSchema = urlSchema.nullable();
+/**
+ * RFC 3339, UTC, `Z`-suffixed, with each component bounded. Deliberately the same
+ * pattern the contract's `result-envelope.schema.json` uses for its own timestamps:
+ * a plugin's documents must not accept what the envelope they travel with would
+ * reject. An unbounded `\d{2}` form admits `2026-99-99T99:99:99Z`.
+ *
+ * `:60` seconds is permitted because RFC 3339 allows a leap second. Month-specific
+ * day counts and leap years are calendar rules a regular expression cannot express;
+ * the contract leaves those to `format: date-time` and to conformance.
+ */
+const RFC3339_UTC =
+  /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])T([01]\d|2[0-3]):[0-5]\d:([0-5]\d|60)(\.\d{1,9})?Z$/;
+
 export const nullableTimestampSchema = z
   .string()
-  .regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,9})?Z$/, {
-    message: 'Expected an RFC 3339 UTC timestamp',
-  })
+  .regex(RFC3339_UTC, { message: 'Expected an RFC 3339 UTC timestamp' })
   .nullable();
 export const timestampSchema = nullableTimestampSchema.unwrap();
 export const nonNegativeIntegerSchema = z.number().int().min(0);

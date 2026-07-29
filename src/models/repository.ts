@@ -8,7 +8,14 @@ import {
   nullableUrlSchema,
 } from './primitives.js';
 
-export const repositoryVisibilitySchema = z.enum(['public', 'private', 'internal', 'unknown']);
+/**
+ * `internal` covers GitHub Enterprise. There is deliberately no `unknown` member:
+ * the convention is `null` plus a diagnostic, never a sentinel that reads as data,
+ * and visibility is always present on a repository the token can see. An
+ * unrecognised value from the provider should surface as a response-shape error —
+ * provider drift needs a code change, not a silent bucket.
+ */
+export const repositoryVisibilitySchema = z.enum(['public', 'private', 'internal']);
 export const projectStatusSchema = z.enum(['active', 'archived']);
 
 export const repositorySchema = z.object({
