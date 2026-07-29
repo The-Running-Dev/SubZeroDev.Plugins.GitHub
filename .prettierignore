@@ -7,5 +7,6 @@ docs/Dockerfile
 docs/docusaurus.config.ts
 docs/sidebar.ts
 docs/docs/index.md
+docs/src/pages/index.md
 .github/workflows/docs-ci.yml
 .github/workflows/docs-deploy.yml
