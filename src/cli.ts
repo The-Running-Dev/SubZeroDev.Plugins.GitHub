@@ -164,11 +164,16 @@ export async function runCliAsync(argv: readonly string[]): Promise<number> {
       finishedAt: new Date().toISOString(),
       result: {
         outcome: { kind: 'failed', exitCode: details?.code === 'token_missing' ? 5 : 2 },
-        summary: 'Command configuration could not be loaded.',
+        summary:
+          details === null
+            ? 'Command execution failed.'
+            : 'Command configuration could not be loaded.',
         errors: [
           {
-            code: details?.code ?? 'command_initialization_failed',
-            message: details?.message ?? 'Command initialization failed.',
+            code: details?.code ?? 'command_execution_failed',
+            message:
+              details?.message ??
+              (error instanceof Error ? error.message : 'Command execution failed.'),
             retryable: false,
           },
         ],
@@ -200,7 +205,14 @@ export function isEntryPoint(moduleUrl: string, entryPoint: string | undefined):
 }
 
 if (isEntryPoint(import.meta.url, process.argv[1])) {
-  void runCliAsync(process.argv.slice(2)).then((exitCode) => {
-    process.exitCode = exitCode;
-  });
+  void runCliAsync(process.argv.slice(2))
+    .then((exitCode) => {
+      process.exitCode = exitCode;
+    })
+    .catch((error: unknown) => {
+      process.stderr.write(
+        `Unexpected command failure: ${error instanceof Error ? error.message : String(error)}\n`,
+      );
+      process.exitCode = 3;
+    });
 }
