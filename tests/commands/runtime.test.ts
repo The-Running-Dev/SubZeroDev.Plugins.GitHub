@@ -12,15 +12,18 @@ describe('operational command runtime', () => {
         return true;
       });
 
-    await expect(runCliAsync(['validate', '--config', 'missing-config.json'])).resolves.toBe(2);
+    try {
+      await expect(runCliAsync(['validate', '--config', 'missing-config.json'])).resolves.toBe(2);
 
-    expect(output.endsWith('\n')).toBe(true);
-    expect(JSON.parse(output)).toMatchObject({
-      command: 'validate',
-      status: 'failed',
-      exitCode: 2,
-      errors: [{ code: 'config_unreadable' }],
-    });
-    stdout.mockRestore();
+      expect(output.endsWith('\n')).toBe(true);
+      expect(JSON.parse(output)).toMatchObject({
+        command: 'validate',
+        status: 'failed',
+        exitCode: 2,
+        errors: [{ code: 'config_unreadable' }],
+      });
+    } finally {
+      stdout.mockRestore();
+    }
   });
 });
