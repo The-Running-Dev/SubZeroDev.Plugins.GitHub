@@ -14,10 +14,11 @@ not what is currently true, so an ADR is read as a dated record rather than as d
 present behavior. Where an ADR and current behavior disagree, current behavior wins and the ADR
 carries a dated amendment rather than being rewritten.
 
-| ADR                                            | Decision                                                                                     |
-| ---------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| [ADR-001](./adr-001-hosting-and-versioning.md) | Host the GitHub plugin as a CLI-first plugin, independent of a future automation runtime     |
-| [ADR-002](./adr-002-phase-one-boundaries.md)   | The boundaries of Phase One: scope, identity, authentication, output, statistics, and budget |
+| ADR                                                      | Decision                                                                                                              |
+| -------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| [ADR-001](./adr-001-hosting-and-versioning.md)           | Host the GitHub plugin as a CLI-first plugin, independent of a future automation runtime                              |
+| [ADR-002](./adr-002-phase-one-boundaries.md)             | The boundaries of Phase One: scope, identity, authentication, output, statistics, and budget                          |
+| [ADR-003](./adr-003-request-wrapper-and-http-testing.md) | The request wrapper talks to `fetch` directly rather than through Octokit, and HTTP is tested with a hand-rolled stub |
 
 ## What moved to the plugin contract
 

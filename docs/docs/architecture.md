@@ -34,8 +34,10 @@ specification apply to every version of the model, including the current 4-field
 `ProjectProvider` exposes a provider name and an asynchronous `discover()`
 operation returning immutable projects. GitHub-specific discovery belongs under
 `src/providers/github/`; consumers import provider-independent types through
-`src/index.ts`. No Octokit type may escape `src/providers/github/` — the domain models stay
-provider-neutral, or the abstraction is decorative.
+`src/index.ts`. No GitHub type may escape `src/providers/github/` — the domain models stay
+provider-neutral, or the abstraction is decorative. The adapter reaches GitHub through `fetch` and its
+own request wrapper rather than through Octokit, per
+[ADR-003](./decisions/adr-003-request-wrapper-and-http-testing.md).
 
 ## The plugin boundary
 
