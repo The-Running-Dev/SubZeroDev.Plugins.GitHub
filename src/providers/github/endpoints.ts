@@ -4,8 +4,10 @@ export interface EndpointDescriptor {
   readonly resource: string;
   readonly path: string;
   readonly paginated: boolean;
+  /** Explicit cap used by collectors and the profile-budget calculation. */
+  readonly maxPages: number;
   readonly bucket: 'core' | 'search';
-  readonly requestsPerRepository: number;
+  readonly requestsPerPage: number;
   readonly absenceMeaning: 'valid-null' | 'partial-failure';
   readonly profiles: readonly CollectionProfile[];
 }
@@ -19,8 +21,9 @@ export const ENDPOINTS: readonly EndpointDescriptor[] = [
     resource: 'repository',
     path: '/repos/{owner}/{repo}',
     paginated: false,
+    maxPages: 1,
     bucket: 'core',
-    requestsPerRepository: 0,
+    requestsPerPage: 0,
     absenceMeaning: 'partial-failure',
     profiles: ['basic', 'standard', 'detailed'],
   },
@@ -28,8 +31,9 @@ export const ENDPOINTS: readonly EndpointDescriptor[] = [
     resource: 'languages',
     path: '/repos/{owner}/{repo}/languages',
     paginated: false,
+    maxPages: 1,
     bucket: 'core',
-    requestsPerRepository: 1,
+    requestsPerPage: 1,
     absenceMeaning: 'partial-failure',
     profiles: ['standard', 'detailed'],
   },
@@ -37,8 +41,9 @@ export const ENDPOINTS: readonly EndpointDescriptor[] = [
     resource: 'latest-release',
     path: '/repos/{owner}/{repo}/releases/latest',
     paginated: false,
+    maxPages: 1,
     bucket: 'core',
-    requestsPerRepository: 1,
+    requestsPerPage: 1,
     absenceMeaning: 'valid-null',
     profiles: ['standard', 'detailed'],
   },
@@ -46,8 +51,9 @@ export const ENDPOINTS: readonly EndpointDescriptor[] = [
     resource: 'branches',
     path: '/repos/{owner}/{repo}/branches',
     paginated: true,
+    maxPages: 1,
     bucket: 'core',
-    requestsPerRepository: 1,
+    requestsPerPage: 1,
     absenceMeaning: 'partial-failure',
     profiles: ['standard', 'detailed'],
   },
@@ -55,8 +61,9 @@ export const ENDPOINTS: readonly EndpointDescriptor[] = [
     resource: 'tags',
     path: '/repos/{owner}/{repo}/tags',
     paginated: true,
+    maxPages: 1,
     bucket: 'core',
-    requestsPerRepository: 1,
+    requestsPerPage: 1,
     absenceMeaning: 'partial-failure',
     profiles: ['standard', 'detailed'],
   },
@@ -64,8 +71,9 @@ export const ENDPOINTS: readonly EndpointDescriptor[] = [
     resource: 'contributors',
     path: '/repos/{owner}/{repo}/contributors',
     paginated: true,
+    maxPages: 1,
     bucket: 'core',
-    requestsPerRepository: 1,
+    requestsPerPage: 1,
     absenceMeaning: 'partial-failure',
     profiles: ['detailed'],
   },
@@ -73,8 +81,9 @@ export const ENDPOINTS: readonly EndpointDescriptor[] = [
     resource: 'commits',
     path: '/repos/{owner}/{repo}/commits',
     paginated: true,
+    maxPages: 1,
     bucket: 'core',
-    requestsPerRepository: 1,
+    requestsPerPage: 1,
     absenceMeaning: 'valid-null',
     profiles: ['detailed'],
   },
@@ -82,8 +91,9 @@ export const ENDPOINTS: readonly EndpointDescriptor[] = [
     resource: 'pull-requests',
     path: '/search/issues',
     paginated: true,
+    maxPages: 1,
     bucket: 'search',
-    requestsPerRepository: 2,
+    requestsPerPage: 2,
     absenceMeaning: 'partial-failure',
     profiles: ['detailed'],
   },
@@ -91,8 +101,9 @@ export const ENDPOINTS: readonly EndpointDescriptor[] = [
     resource: 'issues',
     path: '/search/issues',
     paginated: true,
+    maxPages: 1,
     bucket: 'search',
-    requestsPerRepository: 2,
+    requestsPerPage: 2,
     absenceMeaning: 'partial-failure',
     profiles: ['detailed'],
   },
@@ -105,7 +116,11 @@ export function budgetForProfile(profile: CollectionProfile): {
   return ENDPOINTS.reduce(
     (budget, endpoint) =>
       endpoint.profiles.includes(profile)
-        ? { ...budget, [endpoint.bucket]: budget[endpoint.bucket] + endpoint.requestsPerRepository }
+        ? {
+            ...budget,
+            [endpoint.bucket]:
+              budget[endpoint.bucket] + endpoint.requestsPerPage * endpoint.maxPages,
+          }
         : budget,
     { core: 0, search: 0 },
   );
