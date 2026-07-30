@@ -5,8 +5,13 @@ import { pathToFileURL } from 'node:url';
 import { parseArgs } from 'node:util';
 
 import { GLOBAL_OPTIONS } from './commands/global-options.js';
-import { isCommandName } from './commands/types.js';
+import { isCommandName, type OperationalCommandModule } from './commands/types.js';
 import { writeManifest } from './commands/manifest.js';
+import { commandLoaders } from './commands/registry.js';
+import { createCommandContext } from './services/command-context.js';
+import { buildEnvelope, writeEnvelope } from './output/envelope.js';
+import { isLogLevel } from './logging/logger.js';
+import { ConfigurationError } from './configuration/index.js';
 
 const help = `SubZeroDev GitHub Plugin
 
@@ -32,6 +37,9 @@ type ParsedArguments =
       readonly values: {
         readonly help?: boolean;
         readonly version?: boolean;
+        readonly config?: string;
+        readonly 'log-level'?: string;
+        readonly quiet?: boolean;
       };
       readonly positionals: readonly string[];
     }
@@ -105,6 +113,83 @@ export function runCli(argv: readonly string[]): number {
   return 3;
 }
 
+/** Asynchronous operational dispatcher; the synchronous helper above remains for CLI contract tests. */
+export async function runCliAsync(argv: readonly string[]): Promise<number> {
+  const parsed = parseArguments(argv);
+  if (!parsed.ok) return runCli(argv);
+  const { values, positionals } = parsed;
+  if (values.help || values.version || positionals.length === 0) return runCli(argv);
+
+  const command = positionals[0];
+  if (!command || !isCommandName(command) || command === 'manifest') return runCli(argv);
+  const loader = commandLoaders[command];
+  if (loader === undefined) return runCli(argv);
+
+  const logLevelValue = values['log-level'];
+  if (logLevelValue !== undefined && !isLogLevel(logLevelValue)) {
+    process.stderr.write(`Invalid --log-level: ${logLevelValue}\n`);
+    return 2;
+  }
+  const environmentLogLevel = process.env['SUBZERODEV_LOG_LEVEL'];
+  const logLevel =
+    logLevelValue ??
+    (environmentLogLevel !== undefined && isLogLevel(environmentLogLevel)
+      ? environmentLogLevel
+      : 'info');
+  const startedAt = new Date().toISOString();
+  try {
+    const context = await createCommandContext({
+      configPath: values.config ?? 'github.config.json',
+      logLevel,
+      quiet: values.quiet ?? false,
+    });
+    const module = await loader();
+    if (!isOperationalCommandModule(module)) return runCli(argv);
+    const result = await module.run(context);
+    const envelope = buildEnvelope({
+      command,
+      pluginVersion: readVersion(),
+      startedAt,
+      finishedAt: new Date().toISOString(),
+      result,
+    });
+    writeEnvelope(envelope, process.stdout);
+    return envelope.exitCode;
+  } catch (error: unknown) {
+    const details = error instanceof ConfigurationError ? error : null;
+    const envelope = buildEnvelope({
+      command,
+      pluginVersion: readVersion(),
+      startedAt,
+      finishedAt: new Date().toISOString(),
+      result: {
+        outcome: { kind: 'failed', exitCode: details?.code === 'token_missing' ? 5 : 2 },
+        summary:
+          details === null
+            ? 'Command execution failed.'
+            : 'Command configuration could not be loaded.',
+        errors: [
+          {
+            code: details?.code ?? 'command_execution_failed',
+            message:
+              details?.message ??
+              (error instanceof Error ? error.message : 'Command execution failed.'),
+            retryable: false,
+          },
+        ],
+      },
+    });
+    writeEnvelope(envelope, process.stdout);
+    return envelope.exitCode;
+  }
+}
+
+function isOperationalCommandModule(value: unknown): value is OperationalCommandModule {
+  return (
+    typeof value === 'object' && value !== null && 'run' in value && typeof value.run === 'function'
+  );
+}
+
 export function isEntryPoint(moduleUrl: string, entryPoint: string | undefined): boolean {
   if (!entryPoint) {
     return false;
@@ -120,5 +205,14 @@ export function isEntryPoint(moduleUrl: string, entryPoint: string | undefined):
 }
 
 if (isEntryPoint(import.meta.url, process.argv[1])) {
-  process.exitCode = runCli(process.argv.slice(2));
+  void runCliAsync(process.argv.slice(2))
+    .then((exitCode) => {
+      process.exitCode = exitCode;
+    })
+    .catch((error: unknown) => {
+      process.stderr.write(
+        `Unexpected command failure: ${error instanceof Error ? error.message : String(error)}\n`,
+      );
+      process.exitCode = 3;
+    });
 }
