@@ -21,6 +21,7 @@ export {
   schemaVersionSchema,
 } from './schema-version.js';
 export { repositoryStatisticsSchema } from './statistics.js';
+export { resultEnvelopeSchema } from './result-envelope.js';
 export { summarySchema } from './summary.js';
 
 export { compareIdentity, compareProviderId } from './identity.js';

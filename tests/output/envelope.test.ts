@@ -82,4 +82,26 @@ describe('result envelope', () => {
       }),
     ).toThrow('finishedAt');
   });
+
+  it('refuses malformed timestamps and non-success results without errors', () => {
+    expect(() =>
+      buildEnvelope({
+        command: 'sync',
+        pluginVersion: '0.1.0',
+        startedAt: '2026-02-30T00:00:00Z',
+        finishedAt: '2026-02-30T00:00:01Z',
+        result: { outcome: { kind: 'succeeded' }, summary: 'Synced.' },
+      }),
+    ).toThrow('valid RFC 3339 UTC timestamp');
+
+    expect(() =>
+      buildEnvelope({
+        command: 'sync',
+        pluginVersion: '0.1.0',
+        startedAt: '2026-07-30T00:00:00Z',
+        finishedAt: '2026-07-30T00:00:01Z',
+        result: { outcome: { kind: 'partial' }, summary: 'Partially synced.' },
+      }),
+    ).toThrow('at least one error');
+  });
 });

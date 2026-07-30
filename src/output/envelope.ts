@@ -1,4 +1,5 @@
 import type { CommandName } from '../commands/types.js';
+import { resultEnvelopeSchema } from '../models/result-envelope.js';
 
 export type CommandOutcome =
   | { readonly kind: 'succeeded' }
@@ -60,10 +61,6 @@ export function buildEnvelope(input: {
   readonly finishedAt: string;
   readonly result: CommandResult;
 }): ResultEnvelope {
-  if (Date.parse(input.finishedAt) < Date.parse(input.startedAt)) {
-    throw new RangeError('Result envelope finishedAt must not precede startedAt.');
-  }
-
   const warnings = [...(input.result.warnings ?? [])];
   const data = input.result.data ?? {};
   const serializedBytes = new TextEncoder().encode(JSON.stringify(data)).byteLength;
@@ -83,7 +80,7 @@ export function buildEnvelope(input: {
   }
 
   const outcome = outcomeFields(input.result.outcome);
-  return {
+  return resultEnvelopeSchema.parse({
     schemaVersion: '1.0.0',
     plugin: { id: 'subzerodev.github', version: input.pluginVersion },
     command: input.command,
@@ -96,11 +93,11 @@ export function buildEnvelope(input: {
     errors: input.result.errors ?? [],
     artifacts: input.result.artifacts ?? [],
     metrics: input.result.metrics ?? {},
-  };
+  }) as ResultEnvelope;
 }
 
 export function writeEnvelope(envelope: ResultEnvelope, stdout: NodeJS.WritableStream): void {
-  stdout.write(`${JSON.stringify(envelope)}\n`);
+  stdout.write(`${JSON.stringify(resultEnvelopeSchema.parse(envelope))}\n`);
 }
 
 function outcomeFields(outcome: CommandOutcome): Pick<ResultEnvelope, 'status' | 'exitCode'> {
