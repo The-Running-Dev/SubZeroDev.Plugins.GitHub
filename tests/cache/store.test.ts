@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { CacheError, RepositoryCache } from '../../src/cache/store.js';
+import { listCachedRepositories } from '../../src/services/list-service.js';
 import {
   githubRepositorySchema,
   mapRepository,
@@ -40,5 +41,18 @@ describe('minimal repository cache', () => {
     await expect(new RepositoryCache(fileSystem, 'cache').read()).rejects.toBeInstanceOf(
       CacheError,
     );
+  });
+
+  it('reports a manifest entry with a missing repository document as an invalid cache', async () => {
+    const fileSystem = memoryFileSystem();
+    const cache = new RepositoryCache(fileSystem, 'cache');
+    await cache.write([repository(2, 'two')], '2026-07-30T00:00:00Z');
+    await fileSystem.remove('cache/repositories/2.json');
+
+    await expect(cache.read()).rejects.toBeInstanceOf(CacheError);
+    await expect(listCachedRepositories(cache)).resolves.toMatchObject({
+      outcome: { kind: 'failed', exitCode: 3 },
+      errors: [{ code: 'cache_invalid' }],
+    });
   });
 });

@@ -6,6 +6,7 @@ import { compareIdentity } from '../models/identity.js';
 import { repositorySchema, type Repository } from '../models/repository.js';
 import { timestampSchema } from '../models/primitives.js';
 import { canonicalJson } from '../serialization/canonical-json.js';
+import { mapConcurrent } from '../services/concurrency.js';
 import type { FileSystemPort } from '../services/ports.js';
 
 const cacheManifestSchema = z
@@ -42,14 +43,34 @@ export class RepositoryCache {
     const manifest = await this.readManifest();
     if (manifest === null) return null;
 
-    const repositories = await Promise.all(
-      manifest.repositoryIds.map(async (providerId) =>
-        this.readJson(
-          this.repositoryPath(providerId),
-          repositorySchema,
-          `repository ${providerId}`,
-        ),
-      ),
+    const loaded = await mapConcurrent(
+      manifest.repositoryIds,
+      async (providerId) => {
+        try {
+          return await this.readJson(
+            this.repositoryPath(providerId),
+            repositorySchema,
+            `repository ${providerId}`,
+          );
+        } catch (error: unknown) {
+          if (isMissingFile(error)) {
+            throw new CacheError(
+              `Cache manifest references a missing repository ${providerId} document.`,
+            );
+          }
+          throw error;
+        }
+      },
+      { limit: 8 },
+    );
+    const failure = loaded.results.find((result) => result.status === 'rejected');
+    if (failure?.status === 'rejected') {
+      throw failure.reason instanceof Error
+        ? failure.reason
+        : new CacheError('Could not read repository documents from the cache.');
+    }
+    const repositories = loaded.results.flatMap((result) =>
+      result.status === 'fulfilled' ? [result.value] : [],
     );
     return {
       synchronizedAt: manifest.synchronizedAt,

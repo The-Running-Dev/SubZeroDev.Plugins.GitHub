@@ -1,9 +1,21 @@
-import { RepositoryCache } from '../cache/store.js';
+import { CacheError, RepositoryCache } from '../cache/store.js';
 import type { CommandResult } from '../output/envelope.js';
 
 /** Reads only the local cache; it intentionally never constructs a provider or resolves a token. */
 export async function listCachedRepositories(cache: RepositoryCache): Promise<CommandResult> {
-  const cached = await cache.read();
+  let cached;
+  try {
+    cached = await cache.read();
+  } catch (error: unknown) {
+    if (error instanceof CacheError) {
+      return {
+        outcome: { kind: 'failed', exitCode: 3 },
+        summary: 'The repository cache is invalid.',
+        errors: [{ code: 'cache_invalid', message: error.message, retryable: false }],
+      };
+    }
+    throw error;
+  }
   if (cached === null) {
     return {
       outcome: { kind: 'failed', exitCode: 3 },
