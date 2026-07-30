@@ -40,4 +40,28 @@ export default tseslint.config(
       ],
     },
   },
+  {
+    files: ['src/commands/manifest.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: [
+                '../configuration/**',
+                '../providers/**',
+                '../cache/**',
+                '../services/**',
+                'pino',
+                '@octokit/*',
+                'yaml',
+              ],
+              message: 'The bare manifest command must not load operational dependencies.',
+            },
+          ],
+        },
+      ],
+    },
+  },
 );

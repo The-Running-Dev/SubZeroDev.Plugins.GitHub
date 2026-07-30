@@ -26,7 +26,7 @@ nothing in this repository depends on it.
 
 | Spine milestone                        | State                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | -------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| M0 — Ground and the contract surface   | **Partial.** The toolchain, layout, and exit-code wiring exist. `plugin.yaml`, the `manifest` command, and result-envelope emission do not, and CI is a single `ubuntu-latest` job — there is no Windows matrix and no container job yet.                                                                                                                                                                                                                                                                                                                               |
+| M0 — Ground and the contract surface   | **Partial.** The toolchain, layout, exit-code wiring, `plugin.yaml`, and the canonical `manifest` command exist. The result-envelope builder exists but commands do not emit it yet; the Windows matrix exists, while the container job remains a later deliverable.                                                                                                                                                                                                                                                                                                    |
 | M1 — Configuration, inputs, `validate` | **Not started.** No configuration loader exists; `validate` is a placeholder that exits `3`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 | M2 — The local/offline half            | **Not started.**                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | M3 — Plan store and approval gate      | **Skipped by design.** This plugin only reads GitHub and writes its own cache and output; it declares no write capability against an external system, so the plan-apply gate does not apply to it.                                                                                                                                                                                                                                                                                                                                                                      |
@@ -43,26 +43,26 @@ conformance runner in this repository, and the suite itself (`SubZeroDev.PluginC
 W2.1) is specified but not implemented anywhere in the ecosystem yet. Listed here as a concrete
 checklist for Milestone 7, not as results:
 
-| Check                             | What it needs, that is currently missing                                          |
-| --------------------------------- | --------------------------------------------------------------------------------- |
-| C1 — Manifest in a bare container | No `plugin.yaml`, no `manifest` command                                           |
-| C1b — Attestation agreement       | No signed manifest attestation                                                    |
-| C2 — Universal commands           | `--help`/`--version` pass today; an unknown command correctly exits `2`           |
-| C3 — Output channel purity        | No `--output-format json`; no result envelope to validate                         |
-| C3b — Envelope invariants         | Same — no envelope                                                                |
-| C4 — Declared artifacts           | No artifacts declared in a manifest that does not exist                           |
-| C5 — Exit codes                   | `0`, `2`, `3` are produced; `4`, `5`, `6`, `124`, `130` are not yet reachable     |
-| C6 — Secret canary                | No secret-handling path exists yet to leak from                                   |
-| C7 — Container hygiene            | The image already runs non-root (UID 10001); a read-only config mount is untested |
-| C8 — Determinism                  | No artifacts are produced yet to compare                                          |
-| C9 — Path confinement             | No artifact-writing path exists yet to test                                       |
+| Check                             | What it needs, that is currently missing                                                                           |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| C1 — Manifest in a bare container | `plugin.yaml` and a byte-identical `manifest` command exist; the network-isolated container check is still pending |
+| C1b — Attestation agreement       | No signed manifest attestation                                                                                     |
+| C2 — Universal commands           | `--help`, `--version`, and `manifest` pass today; an unknown command correctly exits `2`                           |
+| C3 — Output channel purity        | No command yet supports `--output-format json`; the result-envelope builder is unit-tested                         |
+| C3b — Envelope invariants         | The builder enforces timestamp ordering and the data-size cap; command wiring is pending                           |
+| C4 — Declared artifacts           | The manifest exists but declares no output artifacts yet                                                           |
+| C5 — Exit codes                   | `0`, `2`, `3` are produced; `4`, `5`, `6`, `124`, `130` are not yet reachable                                      |
+| C6 — Secret canary                | No secret-handling path exists yet to leak from                                                                    |
+| C7 — Container hygiene            | The image already runs non-root (UID 10001); a read-only config mount is untested                                  |
+| C8 — Determinism                  | No artifacts are produced yet to compare                                                                           |
+| C9 — Path confinement             | No artifact-writing path exists yet to test                                                                        |
 
 ## Gaps visible in the repository today
 
-- `src/cache/`, `src/commands/`, `src/configuration/`, `src/output/`, `src/serialization/`,
-  `src/services/`, and `src/providers/github/` are empty (`.gitkeep` only).
-- `pino` and `yaml` are declared dependencies, imported nowhere.
-- `cli.ts` returns only exit codes `0`, `2`, and `3`.
+- `src/cache/` remains a placeholder; command, configuration, output, serialization, service, and
+  GitHub provider layers now have the portions completed through Milestone 3.5a.
+- `cli.ts` returns `0` for `--help`, `--version`, and `manifest`; the five work commands still return
+  `3`.
 - `package.json` has no `license` or `repository` field, despite a MIT `LICENSE` file existing at the
   repository root, and is `"private": true` — which blocks publishing until Milestone 8 clears it.
 - The runner and Docker image declare the contract's plugin-neutral cache, output, and configuration

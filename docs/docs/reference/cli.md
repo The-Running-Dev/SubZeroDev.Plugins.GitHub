@@ -34,14 +34,14 @@ The right-hand column matters: the plugin contract requires the full set, but on
 
 ## Commands
 
-| Command    | Purpose                                                  | Current status                                                                                     |
-| ---------- | -------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
-| `manifest` | Print the plugin manifest. **Required by the contract.** | Not implemented — the command does not exist; invoking it exits `2` as an unknown command, not `3` |
-| `validate` | Validate configuration, credentials, and cache.          | Placeholder — prints a message and exits `3`                                                       |
-| `sync`     | Download or incrementally update repository data.        | Placeholder — prints a message and exits `3`                                                       |
-| `list`     | Display repositories from cache.                         | Placeholder — prints a message and exits `3`                                                       |
-| `stats`    | Display aggregate statistics.                            | Placeholder — prints a message and exits `3`                                                       |
-| `export`   | Export normalized project data.                          | Placeholder — prints a message and exits `3`                                                       |
+| Command    | Purpose                                                  | Current status                                                                                           |
+| ---------- | -------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `manifest` | Print the plugin manifest. **Required by the contract.** | Implemented — prints the build-produced canonical bytes with no configuration, secret, network, or mount |
+| `validate` | Validate configuration, credentials, and cache.          | Placeholder — prints a message and exits `3`                                                             |
+| `sync`     | Download or incrementally update repository data.        | Placeholder — prints a message and exits `3`                                                             |
+| `list`     | Display repositories from cache.                         | Placeholder — prints a message and exits `3`                                                             |
+| `stats`    | Display aggregate statistics.                            | Placeholder — prints a message and exits `3`                                                             |
+| `export`   | Export normalized project data.                          | Placeholder — prints a message and exits `3`                                                             |
 
 `manifest` and `validate` are the two commands every conforming plugin must have. `manifest` must
 succeed with no configuration, no secrets, no network, and no mounts — see the

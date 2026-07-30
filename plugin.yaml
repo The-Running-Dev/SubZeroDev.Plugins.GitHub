@@ -1,0 +1,67 @@
+schemaVersion: 1.0.0
+id: subzerodev.github
+name: SubZeroDev GitHub Plugin
+version: 0.1.0
+description: Collect GitHub repository metadata into provider-independent project models.
+license: MIT
+commands:
+  - id: manifest
+    description: Print the canonical plugin manifest.
+    idempotency: idempotent
+  - id: validate
+    description: Validate configuration, credentials, and cache readiness.
+    idempotency: idempotent
+  - id: sync
+    description: Synchronize GitHub repository data.
+    idempotency: idempotent
+  - id: list
+    description: List repositories from the local cache.
+    idempotency: idempotent
+  - id: stats
+    description: Display aggregate repository statistics.
+    idempotency: idempotent
+  - id: export
+    description: Export normalized project documents.
+    idempotency: idempotent
+runtimes:
+  - id: node-local
+    type: node
+    entrypoint:
+      - node
+      - dist/cli.js
+    development: true
+  - id: docker
+    type: docker
+    image: ghcr.io/the-running-dev/subzerodev-plugins-github
+    digest: sha256:0000000000000000000000000000000000000000000000000000000000000000
+    entrypoint:
+      - node
+      - dist/cli.js
+    development: true
+secrets:
+  - id: github-token
+    required: true
+    environmentVariable: GITHUB_TOKEN
+    description: GitHub access token used for repository collection.
+capabilities:
+  network:
+    required: true
+    destinations:
+      - api.github.com
+  filesystem:
+    read:
+      - config
+    write:
+      - cache
+      - output
+  processExecution: false
+  dockerAccess: false
+  elevatedPrivileges: false
+compatibility:
+  operatingSystems:
+    - linux
+    - windows
+    - macos
+  architectures:
+    - amd64
+    - arm64
