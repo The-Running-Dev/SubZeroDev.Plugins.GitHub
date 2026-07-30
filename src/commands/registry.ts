@@ -8,4 +8,7 @@ import { type CommandModule, type CommandName } from './types.js';
 export const commandLoaders: Readonly<Partial<Record<CommandName, () => Promise<CommandModule>>>> =
   {
     manifest: async () => (await import('./manifest.js')).default,
+    validate: async () => (await import('./validate.js')).default,
+    sync: async () => (await import('./sync.js')).default,
+    list: async () => (await import('./list.js')).default,
   };
