@@ -17,6 +17,12 @@ passing contract conformance at Milestone 8. See
 
 ### Added
 
+- An authored `plugin.yaml`, validated during every build against the vendored contract schema and
+  compiled into canonical `dist/plugin.manifest.json`. The bare `manifest` command prints those exact
+  bytes without reading configuration, credentials, or the network.
+- Command-foundation modules: the canonical JSON writer, global-option splitter, lazy command registry,
+  typed result-envelope builder, and contract-schema tests for the manifest and envelope.
+
 - Versioned `github.config.json` schema, `.strict()` at every level, with **no field a token value
   could occupy** — only the _name_ of an environment variable is configurable. A schema-shape test
   enforces that mechanically rather than by convention.

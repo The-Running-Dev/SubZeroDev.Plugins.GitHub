@@ -4,8 +4,9 @@ import { readFileSync, realpathSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import { parseArgs } from 'node:util';
 
-const commandNames = ['sync', 'list', 'stats', 'export', 'validate'] as const;
-type CommandName = (typeof commandNames)[number];
+import { GLOBAL_OPTIONS } from './commands/global-options.js';
+import { isCommandName } from './commands/types.js';
+import { writeManifest } from './commands/manifest.js';
 
 const help = `SubZeroDev GitHub Plugin
 
@@ -13,6 +14,7 @@ Usage:
   subzerodev-github <command> [options]
 
 Commands:
+  manifest  Print the canonical plugin manifest
   sync      Download or incrementally update repository data
   list      Display repositories
   stats     Display aggregate statistics
@@ -23,10 +25,6 @@ Options:
   -h, --help     Show help
   -v, --version  Show version
 `;
-
-function isCommandName(value: string): value is CommandName {
-  return commandNames.some((command) => command === value);
-}
 
 type ParsedArguments =
   | {
@@ -45,10 +43,7 @@ function parseArguments(argv: readonly string[]): ParsedArguments {
       args: [...argv],
       allowPositionals: true,
       strict: true,
-      options: {
-        help: { type: 'boolean', short: 'h' },
-        version: { type: 'boolean', short: 'v' },
-      },
+      options: GLOBAL_OPTIONS,
     });
 
     return { ok: true, values, positionals };
@@ -99,6 +94,11 @@ export function runCli(argv: readonly string[]): number {
     const invalidCommand = command ?? '';
     process.stderr.write(`Unknown command: ${invalidCommand}\n\n${help}`);
     return 2;
+  }
+
+  if (command === 'manifest') {
+    writeManifest(process.stdout);
+    return 0;
   }
 
   process.stderr.write(`Command "${command}" is not implemented yet.\n`);

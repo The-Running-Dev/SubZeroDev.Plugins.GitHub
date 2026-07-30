@@ -79,12 +79,12 @@ Build and run the local CLI. Positional arguments are passed to the CLI. Use
 ./run.ps1 -Mode Local -SkipInstall -CliArgument '--version'
 ```
 
-> **The five commands are not implemented yet.** `sync`, `list`, `stats`,
+> **The five work commands are not implemented yet.** `sync`, `list`, `stats`,
 > `export`, and `validate` currently print a message and exit `3`, and `run.ps1`
 > surfaces that as a failed command. That is the scaffold reporting honestly, not
-> a broken install. Only `--help` and `--version` do real work today. The plugin
-> contract additionally requires a `manifest` command; it does not exist yet
-> either — see the [CLI reference](https://plugins-github.subzerodev.com/docs/reference/cli).
+> a broken install. `--help`, `--version`, and `manifest` work without a
+> configuration file, token, or network access. See the
+> [CLI reference](https://plugins-github.subzerodev.com/docs/reference/cli).
 
 Build the Docker image and run the CLI:
 
@@ -113,6 +113,7 @@ subzerodev-github list      # not implemented
 subzerodev-github stats     # not implemented
 subzerodev-github export    # not implemented
 subzerodev-github validate  # not implemented
+subzerodev-github manifest  # prints the canonical plugin manifest
 ```
 
 Command behavior is implemented milestone by milestone. The current scaffold

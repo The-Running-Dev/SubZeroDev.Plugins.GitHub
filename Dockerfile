@@ -6,6 +6,9 @@ RUN npm ci
 # invalidate this layer whenever they change, for a stage that never lints.
 COPY tsconfig*.json ./
 COPY src ./src
+COPY tools ./tools
+COPY schemas ./schemas
+COPY plugin.yaml ./
 RUN npm run build
 
 FROM node:24-bookworm-slim
