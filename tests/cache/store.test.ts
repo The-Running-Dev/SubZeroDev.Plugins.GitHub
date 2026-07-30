@@ -55,4 +55,20 @@ describe('minimal repository cache', () => {
       errors: [{ code: 'cache_invalid' }],
     });
   });
+
+  it('keeps a bounded list payload and reports truncation', async () => {
+    const fileSystem = memoryFileSystem();
+    const cache = new RepositoryCache(fileSystem, 'cache');
+    await cache.write(
+      Array.from({ length: 101 }, (_, index) =>
+        repository(index + 1, `repository-${String(index + 1)}`),
+      ),
+      '2026-07-30T00:00:00Z',
+    );
+
+    const result = await listCachedRepositories(cache);
+    expect(result.data?.totalRepositories).toBe(101);
+    expect(result.data?.repositories).toHaveLength(100);
+    expect(result.warnings).toMatchObject([{ code: 'list_truncated' }]);
+  });
 });

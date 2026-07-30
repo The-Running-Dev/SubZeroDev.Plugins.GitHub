@@ -2,16 +2,13 @@ import { RepositoryCache } from '../cache/store.js';
 import {
   loadConfiguration,
   resolveConfiguration,
-  resolveToken,
   type ResolvedConfiguration,
-  type ResolvedToken,
 } from '../configuration/index.js';
 import { createLogger, type LogLevel, type Logger } from '../logging/logger.js';
-import { createGhCliCredentialSource } from '../providers/github/gh-cli-credentials.js';
-import { GitHubProvider } from '../providers/github/github-provider.js';
+import { createGitHubCommandProvider } from '../providers/github/command-provider.js';
+import type { GitHubProvider } from '../providers/github/github-provider.js';
 
 import { nodeFileSystem } from './node-file-system.js';
-import { systemClock, systemSleeper } from './system.js';
 
 export interface CommandContext {
   readonly configuration: ResolvedConfiguration;
@@ -21,7 +18,7 @@ export interface CommandContext {
 }
 
 export interface ProviderContext {
-  readonly token: ResolvedToken;
+  readonly token: import('../configuration/environment.js').ResolvedToken;
   /** Credential-source diagnostics preserved for validate and the run report. */
   readonly tokenNotes: readonly string[];
   readonly provider: GitHubProvider;
@@ -43,30 +40,7 @@ export async function createCommandContext(input: {
     logger,
     cache: new RepositoryCache(nodeFileSystem, configuration.directories.cache),
     async createProvider(): Promise<ProviderContext> {
-      const tokenResolution = await resolveToken({
-        environment,
-        environmentVariable: configuration.auth.tokenEnvironmentVariable,
-        allowGhCliTokenReuse: configuration.auth.allowGhCliTokenReuse,
-        ...(configuration.auth.allowGhCliTokenReuse
-          ? { ghCli: createGhCliCredentialSource(nodeFileSystem, environment) }
-          : {}),
-      });
-      return {
-        token: tokenResolution.token,
-        tokenNotes: tokenResolution.notes,
-        provider: new GitHubProvider({
-          token: tokenResolution.token,
-          logger,
-          sleeper: systemSleeper,
-          clock: systemClock,
-          budget: {
-            warnAtPercentConsumed: configuration.budget.warnAtPercentConsumed,
-            stopAtPercentConsumed: configuration.budget.stopAtPercentConsumed,
-          },
-          userAgent: '@subzerodev/plugin-github',
-          documentationUrlTemplate: configuration.documentation.urlTemplate,
-        }),
-      };
+      return createGitHubCommandProvider({ configuration, logger, environment });
     },
   };
 }

@@ -12,7 +12,10 @@ export const validateCommand: OperationalCommandModule = {
     const result = await validateProvider(providerContext.provider);
     return {
       ...result,
-      warnings: providerContext.tokenNotes.map((message) => ({ code: 'token_reuse', message })),
+      warnings: [
+        ...(result.warnings ?? []),
+        ...providerContext.tokenNotes.map((message) => ({ code: 'token_reuse', message })),
+      ],
     };
   },
 };
