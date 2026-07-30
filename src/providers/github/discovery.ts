@@ -6,6 +6,7 @@ import type { RepositoryFilter } from '../provider.js';
 import type { GitHubClient } from './client.js';
 import { providerError } from './errors.js';
 import { githubRepositorySchema, type GitHubRepository } from './mapping/repository.js';
+import { githubUrl } from './urls.js';
 
 const repositoryPageSchema = z.array(githubRepositorySchema);
 
@@ -28,14 +29,19 @@ export async function* discoverOwnedRepositories(
   // documents would fail the duplicate-ID check at validation, turning a benign race
   // into a failed run.
   const seen = new Set<number>();
+  // Compiled once per run, not once per repository per pattern: this loop runs for every
+  // repository GitHub returns, and the patterns cannot change while it does.
+  const include = filter.includeSlugs.map(compileGlob);
+  const exclude = filter.excludeSlugs.map(compileGlob);
 
   for (let page = 1; ; page += 1) {
-    const url = new URL('/user/repos', client.baseUrl);
-    url.searchParams.set('affiliation', 'owner');
-    url.searchParams.set('per_page', String(PER_PAGE));
-    url.searchParams.set('page', String(page));
-    url.searchParams.set('sort', 'full_name');
-    url.searchParams.set('direction', 'asc');
+    const url = githubUrl(client.baseUrl, 'user/repos', {
+      affiliation: 'owner',
+      per_page: String(PER_PAGE),
+      page: String(page),
+      sort: 'full_name',
+      direction: 'asc',
+    });
     const response = await client.requester.get(
       { resource: 'owned-repositories', url: url.toString(), bucket: 'core' },
       (value) => repositoryPageSchema.parse(value),
@@ -73,37 +79,45 @@ export async function* discoverOwnedRepositories(
         continue;
       }
       seen.add(repository.id);
-      if (matchesFilter(repository, filter)) yield { ok: true, value: repository };
+      if (matchesFilter(repository, filter, include, exclude))
+        yield { ok: true, value: repository };
     }
     if (repositories.length < PER_PAGE) return;
   }
 }
 
-function matchesFilter(repository: GitHubRepository, filter: RepositoryFilter): boolean {
+function matchesFilter(
+  repository: GitHubRepository,
+  filter: RepositoryFilter,
+  include: readonly RegExp[],
+  exclude: readonly RegExp[],
+): boolean {
   if (repository.fork && !filter.includeForks) return false;
   if (repository.archived && !filter.includeArchived) return false;
   if (repository.is_template && !filter.includeTemplates) return false;
   if (repository.disabled && !filter.includeDisabled) return false;
   if (repository.private && !filter.includePrivate) return false;
   if (!repository.private && !filter.includePublic) return false;
-  if (filter.excludeSlugs.some((pattern) => globMatches(pattern, repository.full_name)))
-    return false;
-  return (
-    filter.includeSlugs.length === 0 ||
-    filter.includeSlugs.some((pattern) => globMatches(pattern, repository.full_name))
-  );
+  if (exclude.length === 0 && include.length === 0) return true;
+
+  // Folded once per repository rather than once per pattern.
+  const slug = repository.full_name.toLowerCase();
+  if (exclude.some((pattern) => pattern.test(slug))) return false;
+  return include.length === 0 || include.some((pattern) => pattern.test(slug));
 }
 
 /**
- * Case-insensitive, because GitHub resolves `owner/name` case-insensitively: a filter
- * of `subzerodev/*` against the owner `SubZeroDev` must not silently collect nothing.
- * `toLowerCase` rather than `toLocaleLowerCase` — a filter's meaning must not depend on
- * the environment's locale, for the same reason ordering never uses `localeCompare`.
+ * Case-insensitive, because GitHub resolves `owner/name` case-insensitively: a filter of
+ * `subzerodev/*` against the owner `SubZeroDev` must not silently collect nothing. The
+ * pattern is lowercased here and the candidate at the call site rather than using the `i`
+ * flag, so the fold is `toLowerCase` and never `toLocaleLowerCase` — a filter's meaning must
+ * not depend on the environment's locale, for the same reason ordering never uses
+ * `localeCompare`.
  */
-function globMatches(pattern: string, candidate: string): boolean {
+function compileGlob(pattern: string): RegExp {
   const escaped = pattern
     .toLowerCase()
     .replace(/[|\\{}()[\]^$+?.]/g, '\\$&')
     .replaceAll('*', '.*');
-  return new RegExp(`^${escaped}$`).test(candidate.toLowerCase());
+  return new RegExp(`^${escaped}$`);
 }

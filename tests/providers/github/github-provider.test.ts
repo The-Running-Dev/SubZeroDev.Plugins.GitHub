@@ -36,7 +36,10 @@ const everything: RepositoryFilter = {
   excludeSlugs: [],
 };
 
-function provider(fetch: typeof globalThis.fetch): GitHubProvider {
+function provider(
+  fetch: typeof globalThis.fetch,
+  baseUrl = 'https://example.test',
+): GitHubProvider {
   return new GitHubProvider({
     token,
     logger,
@@ -45,7 +48,7 @@ function provider(fetch: typeof globalThis.fetch): GitHubProvider {
     budget: { warnAtPercentConsumed: 50, stopAtPercentConsumed: 90 },
     userAgent: 'test-agent',
     fetch,
-    baseUrl: 'https://example.test',
+    baseUrl,
   });
 }
 
@@ -117,6 +120,40 @@ describe('GitHubProvider connectivity', () => {
     const result = await provider(stub.fetch).checkAccess();
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.error.kind).toBe('unauthenticated');
+  });
+});
+
+describe('GitHubProvider against a base URL carrying a path prefix', () => {
+  it('keeps the prefix on both the access check and every discovery page', async () => {
+    const stub = createFetchStub([
+      {
+        method: 'GET',
+        pathPattern: /^\/api\/v3\/user$/,
+        respond: () => ({ status: 200, body: { login: 'octo', id: 1 } }),
+      },
+      {
+        method: 'GET',
+        pathPattern: /^\/api\/v3\/user\/repos\?/,
+        respond: () => ({
+          status: 200,
+          body: [repositoryPayload({ id: 1, name: 'one', full_name: 'octo/one' })],
+        }),
+      },
+    ]);
+    const client = provider(stub.fetch, 'https://github.example.com/api/v3');
+
+    await expect(client.checkAccess()).resolves.toMatchObject({ ok: true });
+    const results: Outcome<DiscoveredRepository, ProviderError>[] = [];
+    for await (const result of client.discover(everything)) results.push(result);
+
+    expect(slugs(results)).toEqual(['octo/one']);
+    // The unmatched-route check is the assertion: a dropped prefix would have requested
+    // `/user` and `/user/repos`, which this stub answers with a 501.
+    stub.assertNoUnmatchedRoutes();
+    expect(stub.requests.map((request) => request.url.pathname)).toEqual([
+      '/api/v3/user',
+      '/api/v3/user/repos',
+    ]);
   });
 });
 

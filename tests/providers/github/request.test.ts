@@ -160,6 +160,50 @@ describe('GitHubRequester statistics settling', () => {
     expect(sleeper.slept).toEqual([]);
   });
 
+  it('honours Retry-After on a 202 rather than polling on its own schedule', async () => {
+    const sleeper = fakeSleeper();
+    const stub = route((callIndex) =>
+      callIndex === 0
+        ? { status: 202, headers: { 'retry-after': '3' } }
+        : { status: 200, body: { total: 1 } },
+    );
+    const result = await requester(stub.fetch, { sleeper }).get(
+      {
+        resource: 'repository-statistics:42',
+        url: 'https://example.test/resource',
+        bucket: 'core',
+        settleRetry: { attempts: 3, baseMilliseconds: 100 },
+      },
+      (value) => value,
+    );
+
+    expect(result.ok).toBe(true);
+    // 3000, not the 50 the jittered schedule would have chosen.
+    expect(sleeper.slept).toEqual([3_000]);
+  });
+
+  it('gives up rather than waiting past the ceiling for statistics', async () => {
+    const sleeper = fakeSleeper();
+    const stub = route(() => ({ status: 202, headers: { 'retry-after': '600' } }));
+    const result = await requester(stub.fetch, {
+      sleeper,
+      transientRetry: { attempts: 2, baseMilliseconds: 100, maximumDelayMilliseconds: 15_000 },
+    }).get(
+      {
+        resource: 'repository-statistics:42',
+        url: 'https://example.test/resource',
+        bucket: 'core',
+        settleRetry: { attempts: 3, baseMilliseconds: 100 },
+      },
+      (value) => value,
+    );
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error.kind).toBe('not-settled');
+    expect(stub.requests).toHaveLength(1);
+    expect(sleeper.slept).toEqual([]);
+  });
+
   it('returns data as soon as GitHub settles', async () => {
     const stub = route((callIndex) =>
       callIndex === 0 ? { status: 202 } : { status: 200, body: { total: 7 } },

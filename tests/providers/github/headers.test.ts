@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { parseLastPage } from '../../../src/providers/github/link-header.js';
 import { parseRetryAfterMilliseconds } from '../../../src/providers/github/retry-after.js';
+import { githubUrl } from '../../../src/providers/github/urls.js';
 
 const link = (value: string | null): number | null => parseLastPage(value);
 
@@ -31,6 +32,40 @@ describe('parseLastPage', () => {
 
   it('does not mistake rel="first" for rel="last"', () => {
     expect(link('<https://api.github.com/x?page=1>; rel="first"')).toBeNull();
+  });
+});
+
+describe('githubUrl', () => {
+  it('keeps a path prefix on the base, which a root-relative reference would drop', () => {
+    // `new URL('/user', 'https://github.example.com/api/v3')` resolves to
+    // `https://github.example.com/user` — the whole reason this helper exists.
+    expect(githubUrl('https://github.example.com/api/v3', 'user').toString()).toBe(
+      'https://github.example.com/api/v3/user',
+    );
+    expect(githubUrl('https://github.example.com/api/v3/', 'user').toString()).toBe(
+      'https://github.example.com/api/v3/user',
+    );
+  });
+
+  it('tolerates a leading slash on the path without dropping the prefix', () => {
+    expect(githubUrl('https://github.example.com/api/v3', '/user/repos').toString()).toBe(
+      'https://github.example.com/api/v3/user/repos',
+    );
+  });
+
+  it('builds the plain github.com form unchanged', () => {
+    expect(githubUrl('https://api.github.com', 'user/repos').toString()).toBe(
+      'https://api.github.com/user/repos',
+    );
+  });
+
+  it('appends query parameters in the order given', () => {
+    expect(
+      githubUrl('https://api.github.com', 'user/repos', {
+        affiliation: 'owner',
+        per_page: '100',
+      }).toString(),
+    ).toBe('https://api.github.com/user/repos?affiliation=owner&per_page=100');
   });
 });
 

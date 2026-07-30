@@ -86,13 +86,21 @@ export class GitHubRequester {
   ): Promise<Outcome<GitHubResponse<T>, ProviderError>> {
     const settleAttempts = spec.settleRetry?.attempts ?? 0;
     for (let attempt = 0; ; attempt += 1) {
-      const outcome = await this.withTransientRetry(spec, parse);
-      if (!outcome.ok || outcome.value.status !== 202) return outcome;
+      const attempted = await this.withTransientRetry(spec, parse);
+      if (!attempted.outcome.ok || attempted.outcome.value.status !== 202) return attempted.outcome;
 
       // A 202 is never data, and it is never `ok` either: the caller would have to
       // remember to test `status` to tell "still computing" from "nothing there", and
       // one forgotten check publishes an empty statistic as a real one.
-      if (attempt >= settleAttempts) {
+      const delay =
+        attempt >= settleAttempts
+          ? null
+          : this.backoffDelay(
+              attempt,
+              attempted.retryAfterMilliseconds,
+              spec.settleRetry?.baseMilliseconds ?? 0,
+            );
+      if (delay === null) {
         return {
           ok: false,
           error: providerError(
@@ -111,8 +119,6 @@ export class GitHubRequester {
       }
 
       this.options.rateLimits.recordRetry();
-      const maximum = (spec.settleRetry?.baseMilliseconds ?? 0) * 2 ** attempt;
-      const delay = Math.floor(this.random() * maximum);
       this.options.logger.debug('GitHub statistics are still being computed; retrying.', {
         resource: spec.resource,
         attempt: attempt + 1,
@@ -126,17 +132,22 @@ export class GitHubRequester {
     return this.options.rateLimits.usage();
   }
 
+  /** Returns the whole `Attempt`, so the settle loop above can honour `Retry-After` too. */
   private async withTransientRetry<T>(
     spec: RequestSpec,
     parse: (value: unknown) => T,
-  ): Promise<Outcome<GitHubResponse<T>, ProviderError>> {
+  ): Promise<Attempt<T>> {
     for (let attempt = 0; ; attempt += 1) {
       const attempted = await this.once(spec, parse);
-      if (attempted.outcome.ok || attempt >= this.transientRetry.attempts) return attempted.outcome;
-      if (!TRANSIENT_KINDS.includes(attempted.outcome.error.kind)) return attempted.outcome;
+      if (attempted.outcome.ok || attempt >= this.transientRetry.attempts) return attempted;
+      if (!TRANSIENT_KINDS.includes(attempted.outcome.error.kind)) return attempted;
 
-      const delay = this.transientDelay(attempt, attempted.retryAfterMilliseconds);
-      if (delay === null) return attempted.outcome;
+      const delay = this.backoffDelay(
+        attempt,
+        attempted.retryAfterMilliseconds,
+        this.transientRetry.baseMilliseconds,
+      );
+      if (delay === null) return attempted;
 
       this.options.rateLimits.recordRetry();
       this.options.logger.debug('Retrying a transient GitHub failure.', {
@@ -149,14 +160,30 @@ export class GitHubRequester {
     }
   }
 
-  private transientDelay(attempt: number, retryAfterMilliseconds: number | null): number | null {
+  /**
+   * One schedule for both waits — the settle loop and the transient loop differ in *when*
+   * they wait, not in how long.
+   *
+   * `Retry-After` wins over the computed backoff wherever the response supplied one: polling
+   * sooner than asked is how a client earns a secondary rate limit. Otherwise it is exponential
+   * with full jitter, capped.
+   *
+   * `null` means stop waiting — the requested wait exceeds the policy ceiling. Shortening it
+   * would ignore the server, and blocking a CLI for minutes is worse than reporting the failure
+   * the caller can act on.
+   */
+  private backoffDelay(
+    attempt: number,
+    retryAfterMilliseconds: number | null,
+    baseMilliseconds: number,
+  ): number | null {
     if (retryAfterMilliseconds !== null) {
       return retryAfterMilliseconds > this.transientRetry.maximumDelayMilliseconds
         ? null
         : retryAfterMilliseconds;
     }
     const maximum = Math.min(
-      this.transientRetry.baseMilliseconds * 2 ** attempt,
+      baseMilliseconds * 2 ** attempt,
       this.transientRetry.maximumDelayMilliseconds,
     );
     return Math.floor(this.random() * maximum);

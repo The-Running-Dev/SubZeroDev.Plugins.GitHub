@@ -18,6 +18,7 @@ import { discoverOwnedRepositories, githubUserSchema } from './discovery.js';
 import { providerError } from './errors.js';
 import { mapRepository } from './mapping/repository.js';
 import type { RequestBudget } from './rate-limit.js';
+import { githubUrl } from './urls.js';
 
 export interface CreateGitHubProviderOptions {
   readonly token: ResolvedToken;
@@ -44,7 +45,7 @@ export class GitHubProvider implements RepositoryProvider {
   }
 
   public async checkAccess(): Promise<Outcome<ProviderAccess, ProviderError>> {
-    const url = new URL('/user', this.client.baseUrl);
+    const url = githubUrl(this.client.baseUrl, 'user');
     const response = await this.client.requester.get(
       { resource: 'authenticated-user', url: url.toString(), bucket: 'core' },
       (value) => githubUserSchema.parse(value),

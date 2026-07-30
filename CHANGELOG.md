@@ -62,7 +62,11 @@ passing contract conformance at Milestone 8. See
 ### Fixed
 
 - A `/stats/*` `202` that never settles now reports `not-settled` instead of a successful response with
-  no data — the outcome that error kind was defined for, which was previously unreachable.
+  no data — the outcome that error kind was defined for, which was previously unreachable. A `202`
+  carrying `Retry-After` waits as instructed rather than polling on its own schedule.
+- An API base URL carrying a path prefix — GitHub Enterprise's `/api/v3` — is preserved. Endpoint paths
+  were resolved root-relative, which replaces the whole path, so every request would have been sent to
+  a host-root endpoint that does not exist.
 - Repository slug filters (`includeSlugs`, `excludeSlugs`) match case-insensitively, as GitHub resolves
   `owner/name`. A filter of `subzerodev/*` against the owner `SubZeroDev` previously matched nothing,
   silently.
