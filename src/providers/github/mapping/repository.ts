@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+import { compareCodeUnits } from '../../../models/primitives.js';
 import { repositorySchema, type Repository } from '../../../models/repository.js';
 
 const nullableText = z
@@ -32,7 +33,12 @@ export const githubRepositorySchema = z.object({
   ssh_url: z.string().min(1),
   topics: z.array(z.string().min(1)).optional().default([]),
   license: z
-    .object({ spdx_id: z.string().min(1).nullable().optional(), key: z.string().min(1) })
+    .object({
+      spdx_id: z.string().min(1).nullable().optional(),
+      // Parsed but unused: `key` is GitHub's own slug (`mit`, `other`), not an SPDX
+      // identifier, and optional because nothing here depends on it.
+      key: z.string().min(1).nullable().optional(),
+    })
     .nullable()
     .optional(),
   language: nullableText,
@@ -75,8 +81,8 @@ export function mapRepository(
     webUrl: source.html_url,
     cloneUrl: source.clone_url,
     sshUrl: source.ssh_url,
-    topics: [...source.topics].sort(),
-    license: source.license?.spdx_id ?? source.license?.key ?? null,
+    topics: [...source.topics].sort(compareCodeUnits),
+    license: normalizeLicense(source.license?.spdx_id ?? null),
     primaryLanguage: source.language,
     capabilities: {
       issues: source.has_issues,
@@ -87,6 +93,18 @@ export function mapRepository(
       discussions: source.has_discussions,
     },
   });
+}
+
+/**
+ * GitHub answers `NOASSERTION` when it detected a licence file it could not identify.
+ * That is "unknown", and the convention is `null` rather than a sentinel that reads as
+ * data — a portfolio rendering `NOASSERTION` as a licence name is worse than one
+ * rendering nothing. GitHub's own `key` (`other`) is no more informative, so the SPDX
+ * identifier is the only value carried through.
+ */
+function normalizeLicense(spdxId: string | null): string | null {
+  if (spdxId === null || spdxId.toUpperCase() === 'NOASSERTION') return null;
+  return spdxId;
 }
 
 function normalizeTimestamp(value: string | null): string | null {

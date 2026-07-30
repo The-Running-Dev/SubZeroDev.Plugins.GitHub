@@ -19,7 +19,10 @@ export default tseslint.config(
     },
   },
   {
-    files: ['src/**/*.ts'],
+    // Tests are in scope too: the invariant is that no GitHub client type reaches a
+    // provider-neutral module, and a test is where the first "just for a type" import
+    // would otherwise be written.
+    files: ['src/**/*.ts', 'tests/**/*.ts'],
     ignores: ['src/providers/github/**'],
     rules: {
       'no-restricted-imports': [
@@ -28,7 +31,9 @@ export default tseslint.config(
           patterns: [
             {
               group: ['@octokit/*'],
-              message: 'Octokit is confined to src/providers/github/.',
+              // ADR-003 removed the dependency; the rule stays as the guard against a
+              // reintroduction landing outside the adapter.
+              message: 'A GitHub API client is confined to src/providers/github/.',
             },
           ],
         },

@@ -32,7 +32,6 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@octokit/rest": "^22.0.0",
     "pino": "^9.0.0",
     "yaml": "^2.0.0",
     "zod": "~4.4.3"

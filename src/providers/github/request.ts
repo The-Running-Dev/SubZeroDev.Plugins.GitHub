@@ -1,11 +1,12 @@
 import type { Logger } from '../../logging/logger.js';
 import type { Clock, Sleeper } from '../../services/ports.js';
-import type { Outcome, ProviderError } from '../outcome.js';
+import type { Outcome, ProviderError, ProviderErrorKind } from '../outcome.js';
 
 import { classifyHttpError, providerError } from './errors.js';
 import { parseLastPage } from './link-header.js';
 import type { RateLimitBucket, RateLimitTracker } from './rate-limit.js';
 import type { ResourceKey } from './resource-keys.js';
+import { parseRetryAfterMilliseconds } from './retry-after.js';
 
 export interface RequestSpec {
   readonly resource: ResourceKey;
@@ -25,6 +26,33 @@ export interface GitHubResponse<T> {
   readonly linkLastPage: number | null;
 }
 
+/**
+ * Bounded exponential backoff with full jitter for `5xx` and network failures only.
+ * Rate limiting is deliberately **not** retried: the budget rule is warn at 50% and
+ * stop cleanly at 90% reporting partial success, which is the opposite of sleeping
+ * until the window resets, and is why `@octokit/plugin-throttling` was rejected
+ * (`IMPLEMENTATION-PLAN.md` §1.2). Every request this plugin issues is a `GET`, so
+ * the usual non-idempotent-retry hazard does not apply.
+ */
+export interface TransientRetryPolicy {
+  readonly attempts: number;
+  readonly baseMilliseconds: number;
+  /**
+   * Also the ceiling on an honoured `Retry-After`. A server asking for longer than
+   * this gets the request abandoned rather than shortened — waiting less than we were
+   * told to is how a client earns a secondary rate limit.
+   */
+  readonly maximumDelayMilliseconds: number;
+}
+
+const DEFAULT_TRANSIENT_RETRY: TransientRetryPolicy = {
+  attempts: 2,
+  baseMilliseconds: 500,
+  maximumDelayMilliseconds: 15_000,
+};
+
+const TRANSIENT_KINDS: readonly ProviderErrorKind[] = ['server-error', 'network'];
+
 export interface GitHubRequesterOptions {
   readonly fetch: typeof globalThis.fetch;
   readonly token: string;
@@ -34,32 +62,56 @@ export interface GitHubRequesterOptions {
   readonly clock: Clock;
   readonly rateLimits: RateLimitTracker;
   readonly random?: () => number;
+  readonly transientRetry?: TransientRetryPolicy;
+}
+
+/** `once` also reports what the response asked us to wait; the retry decision is not its job. */
+interface Attempt<T> {
+  readonly outcome: Outcome<GitHubResponse<T>, ProviderError>;
+  readonly retryAfterMilliseconds: number | null;
 }
 
 export class GitHubRequester {
   private readonly random: () => number;
+  private readonly transientRetry: TransientRetryPolicy;
 
   public constructor(private readonly options: GitHubRequesterOptions) {
     this.random = options.random ?? Math.random;
+    this.transientRetry = options.transientRetry ?? DEFAULT_TRANSIENT_RETRY;
   }
 
   public async get<T>(
     spec: RequestSpec,
     parse: (value: unknown) => T,
   ): Promise<Outcome<GitHubResponse<T>, ProviderError>> {
-    const attempts = spec.settleRetry?.attempts ?? 0;
-    for (let attempt = 0; attempt <= attempts; attempt += 1) {
-      const response = await this.once(spec, parse);
-      if (
-        !response.ok ||
-        response.value.status !== 202 ||
-        spec.settleRetry === undefined ||
-        attempt === attempts
-      )
-        return response;
+    const settleAttempts = spec.settleRetry?.attempts ?? 0;
+    for (let attempt = 0; ; attempt += 1) {
+      const outcome = await this.withTransientRetry(spec, parse);
+      if (!outcome.ok || outcome.value.status !== 202) return outcome;
+
+      // A 202 is never data, and it is never `ok` either: the caller would have to
+      // remember to test `status` to tell "still computing" from "nothing there", and
+      // one forgotten check publishes an empty statistic as a real one.
+      if (attempt >= settleAttempts) {
+        return {
+          ok: false,
+          error: providerError(
+            'not-settled',
+            'github_statistics_not_settled',
+            'GitHub was still computing these statistics after the retry budget was spent.',
+            {
+              subject: spec.subject ?? null,
+              status: 202,
+              // A later run can succeed unchanged — unlike response-shape drift, this
+              // needs time, not a code change.
+              retryable: true,
+            },
+          ),
+        };
+      }
 
       this.options.rateLimits.recordRetry();
-      const maximum = spec.settleRetry.baseMilliseconds * 2 ** attempt;
+      const maximum = (spec.settleRetry?.baseMilliseconds ?? 0) * 2 ** attempt;
       const delay = Math.floor(this.random() * maximum);
       this.options.logger.debug('GitHub statistics are still being computed; retrying.', {
         resource: spec.resource,
@@ -68,34 +120,62 @@ export class GitHubRequester {
       });
       await this.options.sleeper.sleep(delay);
     }
-    return {
-      ok: false,
-      error: providerError(
-        'not-settled',
-        'github_statistics_not_settled',
-        'GitHub statistics did not settle in time.',
-      ),
-    };
   }
 
   public usage() {
     return this.options.rateLimits.usage();
   }
 
-  private async once<T>(
+  private async withTransientRetry<T>(
     spec: RequestSpec,
     parse: (value: unknown) => T,
   ): Promise<Outcome<GitHubResponse<T>, ProviderError>> {
+    for (let attempt = 0; ; attempt += 1) {
+      const attempted = await this.once(spec, parse);
+      if (attempted.outcome.ok || attempt >= this.transientRetry.attempts) return attempted.outcome;
+      if (!TRANSIENT_KINDS.includes(attempted.outcome.error.kind)) return attempted.outcome;
+
+      const delay = this.transientDelay(attempt, attempted.retryAfterMilliseconds);
+      if (delay === null) return attempted.outcome;
+
+      this.options.rateLimits.recordRetry();
+      this.options.logger.debug('Retrying a transient GitHub failure.', {
+        resource: spec.resource,
+        kind: attempted.outcome.error.kind,
+        attempt: attempt + 1,
+        delay,
+      });
+      await this.options.sleeper.sleep(delay);
+    }
+  }
+
+  private transientDelay(attempt: number, retryAfterMilliseconds: number | null): number | null {
+    if (retryAfterMilliseconds !== null) {
+      return retryAfterMilliseconds > this.transientRetry.maximumDelayMilliseconds
+        ? null
+        : retryAfterMilliseconds;
+    }
+    const maximum = Math.min(
+      this.transientRetry.baseMilliseconds * 2 ** attempt,
+      this.transientRetry.maximumDelayMilliseconds,
+    );
+    return Math.floor(this.random() * maximum);
+  }
+
+  private async once<T>(spec: RequestSpec, parse: (value: unknown) => T): Promise<Attempt<T>> {
     const decision = this.options.rateLimits.decide(spec.bucket);
     if (decision.kind === 'stop') {
       return {
-        ok: false,
-        error: providerError(
-          'rate-limited',
-          'github_budget_stopped',
-          `Request budget stopped ${decision.bucket} requests at ${String(decision.percentConsumed)}% consumed.`,
-          { subject: spec.subject ?? null },
-        ),
+        retryAfterMilliseconds: null,
+        outcome: {
+          ok: false,
+          error: providerError(
+            'rate-limited',
+            'github_budget_stopped',
+            `Request budget stopped ${decision.bucket} requests at ${String(decision.percentConsumed)}% consumed.`,
+            { subject: spec.subject ?? null },
+          ),
+        },
       };
     }
     if (decision.kind === 'warn')
@@ -118,41 +198,54 @@ export class GitHubRequester {
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : String(error);
       return {
-        ok: false,
-        error: providerError(
-          'network',
-          'github_network_error',
-          `GitHub request failed: ${message}`,
-          {
-            subject: spec.subject ?? null,
-          },
-        ),
+        retryAfterMilliseconds: null,
+        outcome: {
+          ok: false,
+          error: providerError(
+            'network',
+            'github_network_error',
+            `GitHub request failed: ${message}`,
+            {
+              subject: spec.subject ?? null,
+            },
+          ),
+        },
       };
     }
 
     this.options.rateLimits.recordResponse(spec.bucket, response.status, response.headers);
+    const retryAfterMilliseconds = parseRetryAfterMilliseconds(
+      response.headers,
+      this.options.clock.now(),
+    );
     const etag = response.headers.get('etag');
     if (response.status === 304 && spec.acceptNotModified === true) {
       return {
-        ok: true,
-        value: {
-          status: 304,
-          notModified: true,
-          etag,
-          data: null,
-          linkLastPage: parseLastPage(response.headers.get('link')),
+        retryAfterMilliseconds,
+        outcome: {
+          ok: true,
+          value: {
+            status: 304,
+            notModified: true,
+            etag,
+            data: null,
+            linkLastPage: parseLastPage(response.headers.get('link')),
+          },
         },
       };
     }
     if (response.status === 202) {
       return {
-        ok: true,
-        value: {
-          status: 202,
-          notModified: false,
-          etag,
-          data: null,
-          linkLastPage: parseLastPage(response.headers.get('link')),
+        retryAfterMilliseconds,
+        outcome: {
+          ok: true,
+          value: {
+            status: 202,
+            notModified: false,
+            etag,
+            data: null,
+            linkLastPage: parseLastPage(response.headers.get('link')),
+          },
         },
       };
     }
@@ -160,8 +253,11 @@ export class GitHubRequester {
     const text = await response.text();
     if (!response.ok)
       return {
-        ok: false,
-        error: classifyHttpError(response.status, text, response.headers, spec.subject ?? null),
+        retryAfterMilliseconds,
+        outcome: {
+          ok: false,
+          error: classifyHttpError(response.status, text, response.headers, spec.subject ?? null),
+        },
       };
 
     let raw: unknown;
@@ -169,43 +265,52 @@ export class GitHubRequester {
       raw = text.length === 0 ? null : JSON.parse(text);
     } catch {
       return {
-        ok: false,
-        error: providerError(
-          'response-shape',
-          'github_invalid_json',
-          'GitHub returned invalid JSON.',
-          {
-            subject: spec.subject ?? null,
-            status: response.status,
-            retryable: false,
-          },
-        ),
+        retryAfterMilliseconds,
+        outcome: {
+          ok: false,
+          error: providerError(
+            'response-shape',
+            'github_invalid_json',
+            'GitHub returned invalid JSON.',
+            {
+              subject: spec.subject ?? null,
+              status: response.status,
+              retryable: false,
+            },
+          ),
+        },
       };
     }
     try {
       return {
-        ok: true,
-        value: {
-          status: response.status,
-          notModified: false,
-          etag,
-          data: parse(raw),
-          linkLastPage: parseLastPage(response.headers.get('link')),
+        retryAfterMilliseconds,
+        outcome: {
+          ok: true,
+          value: {
+            status: response.status,
+            notModified: false,
+            etag,
+            data: parse(raw),
+            linkLastPage: parseLastPage(response.headers.get('link')),
+          },
         },
       };
     } catch {
       return {
-        ok: false,
-        error: providerError(
-          'response-shape',
-          'github_response_shape',
-          'GitHub returned a response with an unsupported shape.',
-          {
-            subject: spec.subject ?? null,
-            status: response.status,
-            retryable: false,
-          },
-        ),
+        retryAfterMilliseconds,
+        outcome: {
+          ok: false,
+          error: providerError(
+            'response-shape',
+            'github_response_shape',
+            'GitHub returned a response with an unsupported shape.',
+            {
+              subject: spec.subject ?? null,
+              status: response.status,
+              retryable: false,
+            },
+          ),
+        },
       };
     }
   }

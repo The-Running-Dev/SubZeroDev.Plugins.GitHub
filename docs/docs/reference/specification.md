@@ -76,7 +76,9 @@ would silently detach.
 
 ## Technology
 
-Node.js 24+, TypeScript, Octokit, Zod, Pino, Vitest, Docker. JSON and YAML output.
+Node.js 24+, TypeScript, Zod, Pino, Vitest, Docker. JSON and YAML output. GitHub is reached through
+`fetch` and this plugin's own request wrapper rather than through Octokit — see
+[ADR-003](../decisions/adr-003-request-wrapper-and-http-testing.md).
 
 ## Commands
 
@@ -184,7 +186,7 @@ response order.
 
 ## Normalized project model
 
-Octokit response shapes must not appear in output. `status` is derived, not collected: `archived`
+GitHub response shapes must not appear in output. `status` is derived, not collected: `archived`
 when GitHub reports the repository archived, otherwise `active`.
 
 ```json
@@ -288,7 +290,7 @@ than a missing one.
 - Authenticates from the environment and refuses to start without a token
 - Discovers every owned repository in scope exactly once
 - Collects `basic` and `standard` profiles within budget
-- Normalizes into the project model with no Octokit type escaping the provider
+- Normalizes into the project model with no GitHub type escaping the provider
 - Writes the canonical output set, deterministically and byte-stably on repeat
 - Handles rate limiting and partial failure without corrupting the cache
 - Runs natively under Node and through Docker

@@ -58,8 +58,11 @@ cache keyed on the name turns a rename or a transfer into a delete plus an add, 
 history and re-fetches everything. Numeric identifiers serialize as **strings** — a 64-bit provider
 ID does not survive a round trip through a JSON number in every language.
 
-**No Octokit type escapes `providers/github`.** The domain models are provider-neutral, and the
-moment a provider type appears in one, the abstraction is decorative.
+**No GitHub type escapes `providers/github`.** The domain models are provider-neutral, and the
+moment a provider type appears in one, the abstraction is decorative. The adapter no longer depends on
+Octokit at all — requests go through `fetch` and this plugin's own wrapper, per
+[ADR-003](docs/docs/decisions/adr-003-request-wrapper-and-http-testing.md) — and the ESLint restriction
+on `@octokit/*` stays as the guard against a reintroduction landing outside the adapter.
 
 **Pino writes to stderr.** It defaults to stdout, which corrupts the envelope and breaks every
 adapter at once. This is the single most likely defect in a Node plugin, and it is why the

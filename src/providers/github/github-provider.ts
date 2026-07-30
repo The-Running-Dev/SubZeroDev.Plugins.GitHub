@@ -2,12 +2,14 @@ import type { ResolvedToken } from '../../configuration/environment.js';
 import type { Logger } from '../../logging/logger.js';
 import type { Clock, Sleeper } from '../../services/ports.js';
 import type {
+  CollectionProfile,
   CollectionResult,
   DiscoveredRepository,
   ProviderAccess,
   RepositoryFilter,
   RepositoryProvider,
   RequestUsage,
+  ResourceConditions,
 } from '../provider.js';
 import type { Outcome, ProviderError } from '../outcome.js';
 
@@ -87,8 +89,26 @@ export class GitHubProvider implements RepositoryProvider {
     }
   }
 
-  public collect(target: DiscoveredRepository): Promise<Outcome<CollectionResult, ProviderError>> {
-    return Promise.resolve({ ok: true, value: { repository: target.repository, diagnostics: [] } });
+  /**
+   * Milestone 3 discovers and maps; per-repository collection is Milestone 4. Returning
+   * `ok` with an empty `diagnostics` would be indistinguishable from a real collection,
+   * so what is *not* collected is stated explicitly — Milestone 3.5 wires `sync` against
+   * this method, and a stub that reports silent success is one a caller believes.
+   */
+  public collect(
+    target: DiscoveredRepository,
+    profile: CollectionProfile,
+    conditions: ResourceConditions,
+  ): Promise<Outcome<CollectionResult, ProviderError>> {
+    const diagnostics = [
+      `collection_not_implemented: the ${profile} profile collects nothing beyond core discovery metadata before Milestone 4.`,
+    ];
+    if (Object.keys(conditions.etags).length > 0) {
+      diagnostics.push(
+        'conditional_requests_not_implemented: supplied ETags were not sent; conditional collection lands with the cache in Milestone 5.',
+      );
+    }
+    return Promise.resolve({ ok: true, value: { repository: target.repository, diagnostics } });
   }
 
   public usage(): RequestUsage {

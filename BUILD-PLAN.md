@@ -114,19 +114,33 @@ those milestones then have to change.
 
 ## Milestone 3 — GitHub adapter and repository discovery
 
-- [ ] Octokit construction from the resolved environment token
-- [ ] Authenticated connectivity check
-- [ ] Paginated owned-repository discovery with the configured filters
-- [ ] Mapping into provider-neutral records
-- [ ] Central request wrapper: ETags, rate-limit capture, retries, error classification, redaction
-- [ ] Bounded concurrency, starting conservative
+- [x] Client construction from the resolved environment token. **Amended:** requests go through
+      `fetch` and this plugin's own wrapper, and `@octokit/rest` is removed — see
+      [ADR-003](docs/docs/decisions/adr-003-request-wrapper-and-http-testing.md). The first
+      implementation of this item constructed an `Octokit` instance that nothing ever used
+- [x] Authenticated connectivity check
+- [x] Paginated owned-repository discovery with the configured filters, keyed on the immutable numeric
+      ID so a repository shifting pages mid-walk cannot be yielded twice
+- [x] Mapping into provider-neutral records
+- [x] Central request wrapper: ETags, rate-limit capture, error classification, redaction, and bounded
+      retry with full jitter for `5xx` and network failures only — rate limits stop cleanly rather than
+      sleeping, per ADR-003
+- [x] Bounded concurrency, starting conservative. `mapConcurrent` and its tests exist; the `sync`
+      command that drives it arrives with Milestone 3.5
 
 Test with mocked HTTP: empty, one-page, and multi-page accounts; filter combinations; private
 repositories and missing optional fields; 401, 403, 404, 429, 5xx, network interruption, and
 response-shape drift; primary and secondary rate limits.
 
-**Exit:** Octokit imports remain under `providers/github`; every owned repository discovered exactly
-once; errors carry context without secrets.
+Still open here: the recorded-payload fixtures under `tests/fixtures/github/` that
+`IMPLEMENTATION-PLAN.md` §4 lists. Discovery, mapping, and error tests currently build payloads from
+`tests/support/github-payloads.ts`; Milestone 3.5 replaces those with real recorded shapes, which is
+the point of running against a real account before the statistics work.
+
+**Exit:** no GitHub client type resolves outside `providers/github` (ESLint-enforced, `src` and
+`tests`); every owned repository discovered exactly once, verified at page boundaries 0/1/99/100/101/201
+and against a page that repeats an entry; a `202` never reaches a caller as data or as `ok`; errors
+carry context without secrets.
 
 ## Milestone 3.5 — First runnable slice
 
@@ -249,7 +263,7 @@ Keep reviews bounded and the branch green. Each PR includes tests for its exit c
 - Every Phase One deliverable in the
   [GitHub plugin specification](docs/docs/reference/specification.md) is implemented, and every
   non-goal is absent
-- No Octokit type escapes `providers/github`
+- No GitHub client or response type escapes `providers/github`
 - Repository identity survives a rename or transfer
 - An unchanged resync is deterministic and measurably cheaper, shown by a request count
 - Interrupted and partial synchronization preserve the last valid cache

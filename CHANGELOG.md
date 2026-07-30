@@ -37,8 +37,36 @@ passing contract conformance at Milestone 8. See
   immutable numeric ID, serialized as a string.
 - `checkSchemaVersion`, distinguishing an incompatible document from an unreadable one.
 
+- GitHub read adapter: an authenticated connectivity check, paginated owned-repository discovery with
+  the configured filters, and mapping into the provider-neutral repository model. Discovery is keyed on
+  GitHub's immutable numeric ID, so a repository that shifts between pages while the walk is in flight
+  is still yielded exactly once.
+- A central request wrapper carrying every GitHub request: conditional `If-None-Match` requests with
+  `304` counted separately from primary quota, per-bucket rate-limit accounting that warns once and then
+  stops cleanly, error classification into the `ProviderError` kinds the envelope reports, and bounded
+  retry with full jitter for `5xx` and network failures — honouring `Retry-After`, and never retrying a
+  rate limit, which is reported instead.
+- Bounded-concurrency `mapConcurrent`: results index-aligned to input regardless of completion order, a
+  budget guard consulted between task starts, and per-item outcomes so one failure does not discard the
+  rest.
+
+### Changed
+
+- **`@octokit/rest` is no longer a dependency.** GitHub is reached through `fetch` and this plugin's own
+  request wrapper, which has to retain `304` and `202` as outcomes rather than exceptions and read rate-limit
+  and `Link` headers off every response. Recorded in
+  [ADR-003](https://plugins-github.subzerodev.com/docs/decisions/adr-003-request-wrapper-and-http-testing),
+  which also records rejecting `@octokit/plugin-throttling`, `@octokit/plugin-retry`, `p-limit`, `msw`,
+  and `nock`.
+
 ### Fixed
 
+- A `/stats/*` `202` that never settles now reports `not-settled` instead of a successful response with
+  no data — the outcome that error kind was defined for, which was previously unreachable.
+- Repository slug filters (`includeSlugs`, `excludeSlugs`) match case-insensitively, as GitHub resolves
+  `owner/name`. A filter of `subzerodev/*` against the owner `SubZeroDev` previously matched nothing,
+  silently.
+- An unidentified licence is reported as `null` rather than as GitHub's `NOASSERTION` sentinel.
 - Ordering comparators no longer use `localeCompare`, which resolves against the environment's
   default locale and made serialized array order depend on the machine's `LANG`.
 - Document timestamps now use the same bounded RFC 3339 pattern as the contract's result-envelope
@@ -46,7 +74,8 @@ passing contract conformance at Milestone 8. See
 
 ### Known limitations
 
-Every work command — `sync`, `list`, `stats`, `export`, `validate` — still exits `3`. There is no
-GitHub API access, cache, or export behaviour yet, and the contract-required `manifest` command does
-not exist. See
+Every work command — `sync`, `list`, `stats`, `export`, `validate` — still exits `3`. The GitHub
+adapter exists but no command drives it yet; there is no cache or export behaviour, and the
+contract-required `manifest` command does not exist. Per-repository collection is stubbed: it returns
+discovery metadata plus a diagnostic naming what it did not collect. See
 [Where the implementation stands](https://plugins-github.subzerodev.com/docs/reference/contract-conformance).

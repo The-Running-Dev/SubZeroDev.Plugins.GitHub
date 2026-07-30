@@ -27,18 +27,14 @@ export async function mapConcurrent<T, R>(
   }
 
   const results: Settled<R>[] = [];
-  const indexedItems = Array.from(items.entries());
-  let next = 0;
   let stopped = false;
+  // One iterator shared by every worker, so each `for` loop pulls the next unclaimed
+  // entry. `next()` is synchronous, so two workers can never take the same index, and
+  // the index travels with the item rather than being tracked alongside it.
+  const queue = items.entries();
 
   const run = async (): Promise<void> => {
-    while (next < indexedItems.length) {
-      const index = next;
-      next += 1;
-      const entry = indexedItems[index];
-      if (entry === undefined) return;
-      const [originalIndex, item] = entry;
-
+    for (const [index, item] of queue) {
       if (options.signal?.aborted) {
         results[index] = { status: 'skipped', reason: 'cancelled' };
         stopped = true;
@@ -51,7 +47,7 @@ export async function mapConcurrent<T, R>(
       }
 
       try {
-        results[index] = { status: 'fulfilled', value: await worker(item, originalIndex) };
+        results[index] = { status: 'fulfilled', value: await worker(item, index) };
       } catch (reason: unknown) {
         results[index] = { status: 'rejected', reason };
       }

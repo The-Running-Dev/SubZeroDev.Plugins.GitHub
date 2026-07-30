@@ -10,6 +10,13 @@ export type BudgetDecision =
 export interface RequestBudget {
   readonly warnAtPercentConsumed: number;
   readonly stopAtPercentConsumed: number;
+  /**
+   * Bucket *sizes*, only until GitHub's own `x-ratelimit-limit` header replaces them on
+   * the first response. Note that `searchLimit` is the Search bucket's size, which is
+   * not the configuration's `budget.searchRequestsPerMinute` — that is a throttle over
+   * time, and the request pacing it describes arrives with the Search API in Milestone 4.
+   * Wiring one to the other would produce a limit that reads as enforced and is not.
+   */
   readonly coreLimit?: number;
   readonly searchLimit?: number;
 }
