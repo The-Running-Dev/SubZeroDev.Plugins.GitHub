@@ -20,15 +20,12 @@ The plugin exists and is green: a Node.js 24+, strict TypeScript, ESM package wi
 carrying the Phase One command names, a minimal versioned `Project` schema, a provider-independent
 boundary, Vitest, ESLint, Prettier, and Docker.
 
-The commands intentionally return "not implemented". Configuration loading, token resolution, logging,
-and the domain models exist; no GitHub API, synchronization, cache, export, or statistics behaviour
-does.
+Milestones 0–7 are implemented. Milestone 8 adds the release-ready package, container conformance,
+documentation, and tagged publication workflow. The first npm/GHCR/GitHub Release remains an external
+release action after the stacked implementation pull requests merge.
 
-**Milestone 0 is complete.** The `[ubuntu-latest, windows-latest]` matrix with `fail-fast: false` is
-configured and has now been observed green on both legs. The container job remains a Milestone 8
-deliverable, and does not yet exist. An earlier version of this section cited a PR #11 and a completed
-Windows run before either had happened; the run is now real, and the PR number was never in this
-repository's history.
+The `[ubuntu-latest, windows-latest]` quality matrix uses `fail-fast: false`; the dedicated Linux
+container job runs the local C1–C9-equivalent assertions after both application legs pass.
 
 ## Ordering principle
 
@@ -40,7 +37,7 @@ deliberate departures from that, both de-risking:
   as the code.
 - **The `manifest` command and envelope** come early, because conformance depends on them.
 
-## Milestone 0 — Close decisions and stabilize the scaffold — **partially complete**
+## Milestone 0 — Close decisions and stabilize the scaffold — **complete**
 
 - [x] Phase One boundary decisions recorded in
       [ADR-002](docs/docs/decisions/adr-002-phase-one-boundaries.md)
@@ -77,7 +74,7 @@ percentages, and duplicate IDs fail with useful paths; a renamed repository reso
 identity; language percentages total 100 under a documented rounding rule; no provider type appears
 in a domain model.
 
-## Milestone 2 — Ports, configuration, and secret safety
+## Milestone 2 — Ports, configuration, and secret safety — **complete**
 
 - [x] Versioned `github.config.json`: filters, collection profile, directories, formats,
       concurrency, request budget, token variable name
@@ -115,7 +112,7 @@ rate-limit and partial-failure results means carrying per-resource ETags and a r
 which are Milestone 3 and Milestone 5 concepts. Fleshing them out now would mean guessing at shapes
 those milestones then have to change.
 
-## Milestone 3 — GitHub adapter and repository discovery
+## Milestone 3 — GitHub adapter and repository discovery — **complete**
 
 - [x] Client construction from the resolved environment token. **Amended:** requests go through
       `fetch` and this plugin's own wrapper, and `@octokit/rest` is removed — see
@@ -173,7 +170,7 @@ contributor cap, `open_issues_count` including pull requests, and the Search API
 fixtures lose and duplicate nothing; unavailable statistics produce `null` plus diagnostics; a `202`
 never reaches a caller as data.
 
-## Milestone 5 — Cache and incremental synchronization
+## Milestone 5 — Cache and incremental synchronization — **complete**
 
 - [x] Versioned manifest: schema and cache versions, owner identity, last complete sync, per-resource
       ETags and fetch times, repository identity and content hash, deletion reconciliation, and
@@ -188,7 +185,7 @@ never reaches a caller as data.
 Linux; an unchanged second sync is byte-identical and measurably cheaper; partial failure exits `4`,
 retains prior valid data, and records actionable diagnostics.
 
-## Milestone 6 — Serializers and exports
+## Milestone 6 — Serializers and exports — **complete**
 
 - [x] Deterministic `projects.json`, `projects.schema.json`, `statistics.json`, `summary.json`,
       `projects.yaml`, and `sync-report.json`
@@ -209,32 +206,39 @@ export failure leaves the previous complete output set intact.
 end-to-end tests cover success, invalid use, authentication failure, partial sync, rate limiting,
 corrupt cache, and export failure; help text and README match actual options.
 
-## Milestone 8 — Docker, documentation, release
+## Milestone 8 — Docker, documentation, release — **implementation complete; publication pending**
 
 - [x] Non-root container user
 - [x] Writable cache and output mounts
 - [x] Token injection documented without secrets in image layers
-- [ ] Read-only configuration mount
-- [ ] A `container` CI job, which does not exist yet — create it, do not extend it (see
+- [x] Read-only configuration mount
+- [x] A `container` CI job, which does not exist yet — create it, do not extend it (see
       `IMPLEMENTATION-PLAN.md` §10)
-- [ ] Documentation: quick start, token setup, configuration, commands, schemas, cache recovery,
+- [x] Documentation: quick start, token setup, configuration, commands, schemas, cache recovery,
       rate limits, troubleshooting — stating that incompatible exports are regenerated, not migrated
-- [ ] Recorded HTTP fixtures or a controlled fixture account; never a developer's live account in CI
-- [ ] Signed image and signed manifest attestation
-- [ ] Conformance suite passes
-- [ ] Packaging blockers cleared: `private: true` blocks publish, and neither `license` nor
+- [x] Deterministic fetch-stub payload fixtures and a seeded cache fixture; never a developer's live
+      account in CI
+- [x] Release workflow signs the image digest and attests the digest-bearing release manifest; first
+      public signatures await the release tag
+- [x] Local C1–C9 equivalents pass; the shared suite does not exist and is not reported as green
+- [x] Packaging blockers cleared: `private: true` blocks publish, and neither `license` nor
       `repository` is declared. A `LICENSE` file already exists at the repository root but is not
       mirrored into `package.json`
 - [ ] **npm package published to npmjs.com** as `@subzerodev/plugins-github`, with the tarball also
       attached to the GitHub Release, and `npx @subzerodev/plugins-github` working with no `.npmrc`
       configured (`IMPLEMENTATION-PLAN.md` §1.8). GitHub Packages is deliberately not the primary
       registry — it has no anonymous npm read, which would break `npx` for everyone
-- [ ] **Package renamed** from `@subzerodev/plugin-github` to `@subzerodev/plugins-github`, mirroring
+- [x] **Package renamed** from `@subzerodev/plugin-github` to `@subzerodev/plugins-github`, mirroring
       the repository name. This settles ecosystem work item X14 for this plugin, which asked for naming
       to be fixed before first publish — the touchpoints and the ADR are listed in §1.8
 - [x] Coverage gates a release — **decided**: `@vitest/coverage-v8`, enforced in `npm run check`
       starting at Milestone 1 (`IMPLEMENTATION-PLAN.md` §1.2)
-- [ ] Decide whether `npm audit` gates a release
+- [x] Decide whether `npm audit` gates a release — it gates the release workflow at `high`, but stays
+      outside the deterministic local `npm run check` because it depends on live registry advisory data
+
+The checked-in manifest remains explicitly developmental with a placeholder Docker digest. A final
+image cannot embed its own digest without changing that digest; the tagged release workflow therefore
+materializes and attests the non-development release manifest after the pushed digest exists.
 
 **Release gate:** `npm ci && npm run check` on Windows and Linux; image runs non-root with writable
 mounts, exercised both as UID 10001 and under the host-user override; fixture flow runs

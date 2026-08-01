@@ -11,9 +11,9 @@ no migration path for exported documents — an incompatible document is regener
 
 ## Unreleased
 
-Nothing is published yet. `package.json` carries `private: true`, and publication is gated on
-passing contract conformance at Milestone 8. See
-[`BUILD-PLAN.md`](BUILD-PLAN.md) for the milestone sequence.
+The first public release is prepared but not yet published. Publication remains gated on the tagged
+release workflow, its Windows/Linux quality matrix, container conformance, signed image, and manifest
+attestation.
 
 ### Added
 
@@ -22,6 +22,13 @@ passing contract conformance at Milestone 8. See
   bytes without reading configuration, credentials, or the network.
 - Command-foundation modules: the canonical JSON writer, global-option splitter, lazy command registry,
   typed result-envelope builder, and contract-schema tests for the manifest and envelope.
+- Complete `validate`, incremental `sync`, cached `list` and `stats`, deterministic `export`, and
+  `manifest` commands with text/JSON output, dry-run behavior, and centralized exit outcomes.
+- Atomic content-addressed caching with ETags, partial-failure retention, integrity validation, and
+  deterministic JSON/YAML documents plus generated schemas.
+- Immutable-ID portfolio overrides and per-command generated input schemas.
+- Publishable npm metadata, three executable aliases, package-content validation, container
+  conformance, and a provenance/signing release workflow.
 
 - Versioned `github.config.json` schema, `.strict()` at every level, with **no field a token value
   could occupy** — only the _name_ of an environment variable is configurable. A schema-shape test
@@ -84,8 +91,6 @@ passing contract conformance at Milestone 8. See
 
 ### Known limitations
 
-Every work command — `sync`, `list`, `stats`, `export`, `validate` — still exits `3`. The GitHub
-adapter exists but no command drives it yet; there is no cache or export behaviour, and the
-contract-required `manifest` command does not exist. Per-repository collection is stubbed: it returns
-discovery metadata plus a diagnostic naming what it did not collect. See
-[Where the implementation stands](https://plugins-github.subzerodev.com/docs/reference/contract-conformance).
+The shared plugin-contract conformance runner does not yet exist, so this repository runs local C1–C9
+equivalents and states that distinction explicitly. The npm package and signed OCI image are not
+public until the first tagged release completes and bare `npx` is verified against npmjs.com.

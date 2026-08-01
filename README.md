@@ -30,6 +30,12 @@ The plugin runs standalone. No orchestrator, no host, no service — a token in 
 environment, a configuration file, and a terminal:
 
 ```bash
+npx @subzerodev/plugins-github --help
+npm install -g @subzerodev/plugins-github
+subzerodev-github --help
+```
+
+```bash
 export GITHUB_TOKEN=…          # secrets arrive by environment variable, never on the command line
 subzerodev-github validate
 subzerodev-github sync
@@ -123,8 +129,8 @@ is their canonical source, and this repository does not keep a second copy of th
 
 ## Status
 
-Milestones 0 through 7 are complete. The build plan tracks the remaining container, documentation,
-conformance, packaging, and release work in Milestone 8.
+Milestones 0 through 8 are implemented. The first public npm/GHCR/GitHub Release remains gated on the
+stacked pull requests merging and the tagged release workflow completing successfully.
 
 [`BUILD-PLAN.md`](https://github.com/The-Running-Dev/SubZeroDev.Plugins.GitHub/blob/main/BUILD-PLAN.md)
 says what comes next and in what order.

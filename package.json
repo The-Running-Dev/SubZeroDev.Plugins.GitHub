@@ -1,14 +1,28 @@
 {
-  "name": "@subzerodev/plugin-github",
+  "name": "@subzerodev/plugins-github",
   "version": "0.1.0",
-  "private": true,
   "description": "Provider-independent GitHub repository and portfolio data plugin",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/The-Running-Dev/SubZeroDev.Plugins.GitHub.git"
+  },
+  "bugs": {
+    "url": "https://github.com/The-Running-Dev/SubZeroDev.Plugins.GitHub/issues"
+  },
+  "homepage": "https://plugins-github.subzerodev.com",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
+  },
   "type": "module",
   "engines": {
     "node": ">=24"
   },
   "bin": {
-    "subzerodev-github": "./dist/cli.js"
+    "subzerodev-github": "./dist/cli.js",
+    "sz-github": "./dist/cli.js",
+    "plugins-github": "./dist/cli.js"
   },
   "exports": {
     ".": {
@@ -17,7 +31,9 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "schemas",
+    "plugin.yaml"
   ],
   "scripts": {
     "build": "npm run clean && npm run build:manifest && npm run build:schemas && tsc -p tsconfig.build.json",
@@ -30,8 +46,11 @@
     "lint": "eslint .",
     "start": "node dist/cli.js",
     "pretest": "npm run build",
-    "test": "vitest run",
+    "test": "vitest run --coverage",
     "check": "npm run format:check && npm run lint && npm run typecheck && npm test",
+    "prepublishOnly": "npm run check",
+    "release:check": "npm run check && npm audit --audit-level=high && npm run package:check",
+    "package:check": "tsx tools/check-package.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -42,6 +61,7 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@types/node": "^24.0.0",
+    "@vitest/coverage-v8": "^3.2.7",
     "ajv": "^8.20.0",
     "ajv-formats": "^3.0.1",
     "eslint": "^10.8.0",

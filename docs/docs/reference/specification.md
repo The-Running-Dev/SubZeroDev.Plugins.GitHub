@@ -13,7 +13,7 @@ sidebar_position: 2
 | Plugin ID  | `subzerodev.github`                                                                                                |
 | CLI        | `subzerodev-github`, alias `sz-github`                                                                             |
 | Contract   | `SubZeroDev.PluginContract` 1.0                                                                                    |
-| Package    | `@subzerodev/plugin-github`                                                                                        |
+| Package    | `@subzerodev/plugins-github`                                                                                       |
 | Code       | This repository, `SubZeroDev.Plugins.GitHub`                                                                       |
 | Build plan | [`BUILD-PLAN.md`](https://github.com/The-Running-Dev/SubZeroDev.Plugins.GitHub/blob/main/BUILD-PLAN.md)            |
 | Decisions  | [ADR-001](../decisions/adr-001-hosting-and-versioning.md), [ADR-002](../decisions/adr-002-phase-one-boundaries.md) |

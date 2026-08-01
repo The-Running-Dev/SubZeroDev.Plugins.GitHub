@@ -35,7 +35,7 @@ export async function createCommandContext(input: {
 }): Promise<CommandContext> {
   const environment = input.environment ?? process.env;
   const loaded = await loadConfiguration(input.configPath);
-  const configuration = resolveConfiguration(loaded.configuration, loaded.directory);
+  const configuration = resolveConfiguration(loaded.configuration, loaded.directory, environment);
   const logger = createLogger({ level: input.logLevel, quiet: input.quiet });
   return {
     configuration,

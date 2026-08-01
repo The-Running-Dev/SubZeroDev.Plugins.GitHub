@@ -31,6 +31,8 @@ param(
 
     [string]$DockerUser = '',
 
+    [string]$ConfigPath = (Join-Path $PSScriptRoot 'github.config.json'),
+
     [string]$CachePath = (Join-Path $PSScriptRoot '.cache'),
 
     [string]$OutputPath = (Join-Path $PSScriptRoot 'output'),
@@ -108,6 +110,13 @@ try {
 
             $resolvedCache = (Resolve-Path -LiteralPath $CachePath).Path
             $resolvedOutput = (Resolve-Path -LiteralPath $OutputPath).Path
+            $configArguments = @()
+            if (Test-Path -LiteralPath $ConfigPath -PathType Leaf) {
+                $resolvedConfig = (Resolve-Path -LiteralPath $ConfigPath).Path
+                $configArguments = @(
+                    '--volume', "${resolvedConfig}:/etc/subzerodev/plugin.config.json:ro"
+                )
+            }
             # The image runs as UID 10001, so bind mounts owned by the host user are
             # unwritable on Linux unless the container runs as that user.
             $userArguments = @()
@@ -124,7 +133,7 @@ try {
             # knowledge. Nothing in src/ reads them yet; see docs/docs/guide/docker.md.
             $dockerArguments = @(
                 'run', '--rm'
-            ) + $userArguments + @(
+            ) + $userArguments + $configArguments + @(
                 '--env', 'GITHUB_TOKEN',
                 '--env', 'SUBZERODEV_PLUGIN_CACHE=/var/lib/subzerodev/cache',
                 '--env', 'SUBZERODEV_PLUGIN_OUTPUT=/var/lib/subzerodev/output',
