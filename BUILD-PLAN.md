@@ -175,14 +175,14 @@ never reaches a caller as data.
 
 ## Milestone 5 — Cache and incremental synchronization
 
-- [ ] Versioned manifest: schema and cache versions, owner identity, last complete sync, per-resource
+- [x] Versioned manifest: schema and cache versions, owner identity, last complete sync, per-resource
       ETags and fetch times, repository identity and content hash, deletion reconciliation, and
       secret-free diagnostics
-- [ ] First sync; conditional requests; reuse of valid unchanged data
-- [ ] Addition, change, rename, transfer, archive, and deletion reconciliation, keyed on immutable
+- [x] First sync; conditional requests; reuse of valid unchanged data
+- [x] Addition, change, rename, transfer, archive, and deletion reconciliation, keyed on immutable
       identity so a rename is not a delete-plus-add
-- [ ] Staging writes then per-file `rename` — never a directory swap
-- [ ] Startup cleanup of abandoned staging data; integrity validation; incompatible-version handling
+- [x] Staging writes then per-file `rename` — never a directory swap
+- [x] Startup cleanup of abandoned staging data; integrity validation; incompatible-version handling
 
 **Exit:** an interrupted write cannot damage the last valid cache, verified on Windows as well as
 Linux; an unchanged second sync is byte-identical and measurably cheaper; partial failure exits `4`,

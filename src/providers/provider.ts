@@ -30,13 +30,20 @@ export interface ProviderAccess {
 
 export interface ResourceConditions {
   readonly etags: Readonly<Record<string, string>>;
+  readonly previous?: CollectionResult | null;
 }
 
 export interface DiscoveredRepository {
   readonly repository: Repository;
 }
 
-export type CollectionResult = Pick<
+export interface ResourceObservation {
+  readonly key: string;
+  readonly etag: string | null;
+  readonly fetchedAt: string;
+}
+
+export interface CollectionResult extends Pick<
   Project,
   | 'repository'
   | 'technology'
@@ -46,7 +53,9 @@ export type CollectionResult = Pick<
   | 'releases'
   | 'contributors'
   | 'diagnostics'
->;
+> {
+  readonly resources: readonly ResourceObservation[];
+}
 
 export interface RequestUsage {
   readonly primaryRequests: number;

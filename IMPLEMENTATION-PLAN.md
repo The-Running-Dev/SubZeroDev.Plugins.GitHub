@@ -906,9 +906,12 @@ export interface StagingArea {
 }
 ```
 
-Cache layout: `.cache/manifest.json` + `.cache/repositories/<providerId>.json` (one file per repo,
-**not** one monolithic file — this is what makes "retain prior valid data for whatever failed"
-implementable: a failed repository's file is simply not replaced) + `.cache/staging-<runId>/`.
+Cache layout: `.cache/manifest.json` plus
+`.cache/repositories/<providerId>-<documentHash>.json` (one content-addressed file per repository
+revision, **not** one monolithic file) and `.cache/.staging-<runId>/`. The manifest is renamed last and
+is the commit record. Content-addressing means repository publication cannot invalidate the previous
+manifest if a later rename fails; unreferenced revisions are reclaimed only after the new manifest is
+live. A failed repository keeps the prior document reference byte-for-byte.
 
 **Two details expensive to discover late:** staging must be on the **same volume** as the destination
 (`liveRoot/.staging-<runId>/`, never `os.tmpdir()` — a cross-device rename fails `EXDEV`, and a bind

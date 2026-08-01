@@ -13,6 +13,8 @@ export const syncCommand: OperationalCommandModule = {
       provider: providerContext.provider,
       cache: context.cache,
       filter: context.configuration.repositories,
+      profile: context.configuration.collection.profile,
+      concurrency: context.configuration.budget.concurrency,
       synchronizedAt: new Date().toISOString(),
     });
     return {
