@@ -62,8 +62,10 @@ export class RepositoryCache {
     this.directory = resolve(directory);
   }
 
-  public async read(): Promise<CacheSnapshot | null> {
-    await reclaimStagingDirectories(this.fileSystem, this.directory);
+  public async read(options: { readonly reclaim?: boolean } = {}): Promise<CacheSnapshot | null> {
+    if (options.reclaim !== false) {
+      await reclaimStagingDirectories(this.fileSystem, this.directory);
+    }
     const manifest = await this.readManifest();
     if (manifest === null) return null;
     const manifestIssue = manifestIntegrityIssue(manifest);

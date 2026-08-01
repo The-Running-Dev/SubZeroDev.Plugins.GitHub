@@ -11,6 +11,7 @@ import {
 } from '../serialization/documents.js';
 import { sha256 } from '../serialization/digest.js';
 import type { FileSystemPort } from './ports.js';
+import { applyPortfolioOverrides, type PortfolioOverrides } from './portfolio-service.js';
 
 export class ExportError extends Error {
   public constructor(message: string) {
@@ -25,26 +26,20 @@ export async function exportCachedProjects(input: {
   readonly outputDirectory: string;
   readonly formats: readonly OutputFormat[];
   readonly runId?: () => string;
+  readonly portfolioOverrides?: PortfolioOverrides;
 }): Promise<{
   readonly documents: OutputDocumentSet;
   readonly artifacts: readonly ArtifactReference[];
 }> {
-  let snapshot;
-  try {
-    snapshot = await input.cache.read();
-  } catch (error: unknown) {
-    if (error instanceof CacheError) throw new ExportError(error.message);
-    throw error;
-  }
-  if (snapshot === null)
-    throw new ExportError('No synchronized cache is available; run sync first.');
-
-  const documents = buildOutputDocuments({
-    projects: snapshot.projects.map(({ project }) => project),
-    report: buildSyncReport(snapshot.projects),
+  const prepared = await previewCachedProjects({
+    cache: input.cache,
     formats: input.formats,
+    reclaim: true,
+    ...(input.portfolioOverrides === undefined
+      ? {}
+      : { portfolioOverrides: input.portfolioOverrides }),
   });
-  const files = outputFiles(documents);
+  const files = outputFiles(prepared.documents);
   const staging = new StagingArea(
     input.fileSystem,
     input.outputDirectory,
@@ -57,6 +52,37 @@ export async function exportCachedProjects(input: {
     await staging.discard();
     throw new ExportError(error instanceof Error ? error.message : 'Could not publish exports.');
   }
+  return prepared;
+}
+
+export async function previewCachedProjects(input: {
+  readonly cache: RepositoryCache;
+  readonly formats: readonly OutputFormat[];
+  readonly reclaim?: boolean;
+  readonly portfolioOverrides?: PortfolioOverrides;
+}): Promise<{
+  readonly documents: OutputDocumentSet;
+  readonly artifacts: readonly ArtifactReference[];
+}> {
+  let snapshot;
+  try {
+    snapshot = await input.cache.read({ reclaim: input.reclaim ?? false });
+  } catch (error: unknown) {
+    if (error instanceof CacheError) throw new ExportError(error.message);
+    throw error;
+  }
+  if (snapshot === null)
+    throw new ExportError('No synchronized cache is available; run sync first.');
+
+  const documents = buildOutputDocuments({
+    projects: applyPortfolioOverrides(
+      snapshot.projects.map(({ project }) => project),
+      input.portfolioOverrides ?? new Map(),
+    ),
+    report: buildSyncReport(snapshot.projects),
+    formats: input.formats,
+  });
+  const files = outputFiles(documents);
   return {
     documents,
     artifacts: files.map((file) => ({

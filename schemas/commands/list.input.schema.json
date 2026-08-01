@@ -1,0 +1,36 @@
+{
+  "$id": "https://plugins-github.subzerodev.com/schemas/commands/list.input.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "config": {
+      "type": "string"
+    },
+    "dry-run": {
+      "type": "boolean"
+    },
+    "help": {
+      "type": "boolean"
+    },
+    "json": {
+      "type": "boolean"
+    },
+    "limit": {
+      "type": "string"
+    },
+    "log-level": {
+      "type": "string"
+    },
+    "output-format": {
+      "type": "string"
+    },
+    "quiet": {
+      "type": "boolean"
+    },
+    "version": {
+      "type": "boolean"
+    }
+  },
+  "title": "list command input",
+  "type": "object"
+}

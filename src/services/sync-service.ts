@@ -12,6 +12,7 @@ import type {
   RepositoryProvider,
 } from '../providers/provider.js';
 import { mapConcurrent } from './concurrency.js';
+import { applyPortfolioOverride, type PortfolioOverrides } from './portfolio-service.js';
 
 export async function synchronizeRepositories(input: {
   readonly provider: RepositoryProvider;
@@ -21,11 +22,14 @@ export async function synchronizeRepositories(input: {
   readonly concurrency: number;
   readonly synchronizedAt: string;
   readonly rawStore?: RawResponseStore;
+  readonly dryRun?: boolean;
+  readonly useCache?: boolean;
+  readonly portfolioOverrides?: PortfolioOverrides;
 }): Promise<CommandResult> {
   let previous: Awaited<ReturnType<RepositoryCache['read']>>;
   const cacheWarnings: Diagnostic[] = [];
   try {
-    previous = await input.cache.read();
+    previous = input.useCache === false ? null : await input.cache.read({ reclaim: !input.dryRun });
   } catch (error: unknown) {
     if (error instanceof CacheVersionError) {
       return failed(
@@ -125,7 +129,10 @@ export async function synchronizeRepositories(input: {
         const result = settled.value.result.value;
         const prior = previousById.get(target.repository.identity.providerId);
         observed.push({
-          project: toProject(result, prior?.project.portfolio),
+          project: applyPortfolioOverride(
+            toProject(result, prior?.project.portfolio),
+            input.portfolioOverrides ?? new Map(),
+          ),
           resources: result.resources,
           diagnostics: result.diagnostics,
           partial: result.diagnostics.length > 0,
@@ -166,11 +173,14 @@ export async function synchronizeRepositories(input: {
       partial: true,
     };
   });
-  await input.cache.write({
-    owner,
-    synchronizedAt: errors.length === 0 ? input.synchronizedAt : (previous?.synchronizedAt ?? null),
-    projects: next,
-  });
+  if (!input.dryRun) {
+    await input.cache.write({
+      owner,
+      synchronizedAt:
+        errors.length === 0 ? input.synchronizedAt : (previous?.synchronizedAt ?? null),
+      projects: next,
+    });
+  }
   if (input.rawStore !== undefined && input.provider.rawResponses !== undefined) {
     try {
       await input.rawStore.write(input.provider.rawResponses());
@@ -191,7 +201,8 @@ export async function synchronizeRepositories(input: {
     data: {
       discoveredRepositories: discovered.length,
       cachedRepositories: next.length,
-      cacheWritePerformed: true,
+      cacheWritePerformed: !input.dryRun,
+      dryRun: input.dryRun ?? false,
       changes: counts,
       requestUsage: input.provider.usage(),
     },

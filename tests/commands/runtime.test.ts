@@ -13,7 +13,9 @@ describe('operational command runtime', () => {
       });
 
     try {
-      await expect(runCliAsync(['validate', '--config', 'missing-config.json'])).resolves.toBe(2);
+      await expect(
+        runCliAsync(['validate', '--json', '--config', 'missing-config.json']),
+      ).resolves.toBe(2);
 
       expect(output.endsWith('\n')).toBe(true);
       expect(JSON.parse(output)).toMatchObject({

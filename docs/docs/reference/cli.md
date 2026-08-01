@@ -10,11 +10,9 @@ sidebar_position: 1
 subzerodev-github <command> [options]
 ```
 
-This page states what the [plugin contract](./specification.md) requires of the CLI surface, and
-separately what this scaffold currently implements. Where the two disagree, that is a gap tracked in
-[`BUILD-PLAN.md`](https://github.com/The-Running-Dev/SubZeroDev.Plugins.GitHub/blob/main/BUILD-PLAN.md),
-not a documentation error — see
-[Where the implementation stands](./contract-conformance.md) for the full accounting.
+All operational commands emit text by default and one contract result envelope with `--json` or
+`--output-format json`. `manifest` always emits its canonical JSON document and requires no
+configuration, credential, network, cache, or output directory.
 
 ## Global options
 
@@ -22,30 +20,41 @@ not a documentation error — see
 | ------------------------------ | ------------------------------------------------- | ----------------- |
 | `-h`, `--help`                 | Usage to stdout, exit 0. Also valid per command.  | Yes               |
 | `-v`, `--version`              | Plugin version to stdout, exit 0.                 | Yes               |
-| `--output-format <text\|json>` | Selects the output channel. Default `text`.       | No                |
-| `--json`                       | Alias for `--output-format json`.                 | No                |
-| `--config <path>`              | Configuration file location.                      | No                |
-| `--log-level <level>`          | One of `error`, `warn`, `info`, `debug`, `trace`. | No                |
-| `--quiet`                      | Suppress non-essential stderr output.             | No                |
-| `--dry-run`                    | Required for any command with side effects.       | No                |
+| `--output-format <text\|json>` | Selects the output channel. Default `text`.       | Yes               |
+| `--json`                       | Alias for `--output-format json`.                 | Yes               |
+| `--config <path>`              | Configuration file location.                      | Yes               |
+| `--log-level <level>`          | One of `error`, `warn`, `info`, `debug`, `trace`. | Yes               |
+| `--quiet`                      | Suppress non-essential stderr output.             | Yes               |
+| `--dry-run`                    | Preview `sync` or `export` with zero writes.      | Yes               |
 
-The right-hand column matters: the plugin contract requires the full set, but only `--help` and
-`--version` exist in the CLI parser today.
+Global options may appear before or after the command. Combining `--json` with
+`--output-format text` is refused instead of silently choosing one.
 
 ## Commands
 
-| Command    | Purpose                                                  | Current status                                                                                           |
-| ---------- | -------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| `manifest` | Print the plugin manifest. **Required by the contract.** | Implemented — prints the build-produced canonical bytes with no configuration, secret, network, or mount |
-| `validate` | Validate configuration, credentials, and cache.          | Placeholder — prints a message and exits `3`                                                             |
-| `sync`     | Download or incrementally update repository data.        | Placeholder — prints a message and exits `3`                                                             |
-| `list`     | Display repositories from cache.                         | Placeholder — prints a message and exits `3`                                                             |
-| `stats`    | Display aggregate statistics.                            | Placeholder — prints a message and exits `3`                                                             |
-| `export`   | Export normalized project data.                          | Placeholder — prints a message and exits `3`                                                             |
+| Command    | Purpose                                            | Implemented today |
+| ---------- | -------------------------------------------------- | ----------------- |
+| `manifest` | Print the canonical plugin manifest.               | Yes               |
+| `validate` | Validate configuration and GitHub access.          | Yes               |
+| `sync`     | Incrementally synchronize repository data.         | Yes               |
+| `list`     | Display repositories from the local cache.         | Yes               |
+| `stats`    | Display aggregate cached statistics.               | Yes               |
+| `export`   | Export deterministic normalized project documents. | Yes               |
 
-`manifest` and `validate` are the two commands every conforming plugin must have. `manifest` must
-succeed with no configuration, no secrets, no network, and no mounts — see the
-[plugin specification](./specification.md) for the contract's bare-container requirement.
+### Command-specific options
+
+| Command  | Option              | Meaning                                   |
+| -------- | ------------------- | ----------------------------------------- |
+| `sync`   | `--profile <value>` | `basic`, `standard`, or `detailed`.       |
+| `sync`   | `--no-cache`        | Ignore the prior cache while collecting.  |
+| `sync`   | `--include-forks`   | Include forks for this run.               |
+| `list`   | `--limit <value>`   | Return 1–1000 repositories; default 100.  |
+| `export` | `--format <value>`  | Export `json` or `yaml`; may be repeated. |
+| `export` | `--output <path>`   | Override the configured output directory. |
+
+Portfolio overrides are loaded from `portfolio.overrides` in configuration. The file has
+`schemaVersion: "1.0.0"` and an `overrides` array; each entry carries `providerId`, an optional
+human-readable `slug`, and a partial `portfolio` object. Only the immutable `providerId` matches.
 
 ## Exit codes
 
@@ -69,6 +78,5 @@ unassigned keeps "the plugin crashed" distinguishable from "the plugin reported 
 `130` follow `timeout(1)` and `128 + SIGINT`, so shell tooling and container runtimes already produce
 them.
 
-Today, `cli.ts` only ever returns `0` (help/version), `2` (unknown command or bad option), or `3`
-(placeholder command). Codes `4`, `5`, `6`, `124`, and `130` are contract obligations this scaffold
-does not yet trigger.
+Commands map invalid use/configuration to `2`, operational failures to `3`, partial synchronization
+to `4`, authentication failures to `5`, and rate/budget stops with no usable result to `6`.

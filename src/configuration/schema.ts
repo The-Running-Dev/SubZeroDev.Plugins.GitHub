@@ -77,6 +77,14 @@ export const configurationSchema = z
       .strict()
       .prefault({}),
 
+    portfolio: z
+      .object({
+        /** Local authored metadata, matched only by immutable provider repository ID. */
+        overrides: z.string().min(1).nullable().default(null),
+      })
+      .strict()
+      .prefault({}),
+
     budget: z
       .object({
         concurrency: z.number().int().min(1).max(16).default(4),
