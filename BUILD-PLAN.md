@@ -20,9 +20,10 @@ The plugin exists and is green: a Node.js 24+, strict TypeScript, ESM package wi
 carrying the Phase One command names, a minimal versioned `Project` schema, a provider-independent
 boundary, Vitest, ESLint, Prettier, and Docker.
 
-The commands intentionally return "not implemented". Configuration loading, token resolution, logging,
-and the domain models exist; no GitHub API, synchronization, cache, export, or statistics behaviour
-does.
+The `manifest`, `validate`, `sync`, and `list` commands are runnable. Configuration loading, token
+resolution, logging, domain models, GitHub repository discovery, and the minimal Milestone 3.5 cache
+exist. Extended metadata collection, statistics, incremental synchronization, and export remain for
+later milestones.
 
 **Milestone 0 is complete.** The `[ubuntu-latest, windows-latest]` matrix with `fail-fast: false` is
 configured and has now been observed green on both legs. The container job remains a Milestone 8
@@ -40,7 +41,7 @@ deliberate departures from that, both de-risking:
   as the code.
 - **The `manifest` command and envelope** come early, because conformance depends on them.
 
-## Milestone 0 — Close decisions and stabilize the scaffold — **partially complete**
+## Milestone 0 — Close decisions and stabilize the scaffold — **complete**
 
 - [x] Phase One boundary decisions recorded in
       [ADR-002](docs/docs/decisions/adr-002-phase-one-boundaries.md)
