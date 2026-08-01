@@ -43,6 +43,11 @@ export interface ResourceObservation {
   readonly fetchedAt: string;
 }
 
+export interface ProviderRawResponse {
+  readonly name: string;
+  readonly contents: string;
+}
+
 export interface CollectionResult extends Pick<
   Project,
   | 'repository'
@@ -89,4 +94,6 @@ export interface RepositoryProvider {
     conditions: ResourceConditions,
   ): Promise<Outcome<CollectionResult, ProviderError>>;
   usage(): RequestUsage;
+  /** Present only for providers that can expose diagnostic raw response retention. */
+  rawResponses?(): readonly ProviderRawResponse[];
 }

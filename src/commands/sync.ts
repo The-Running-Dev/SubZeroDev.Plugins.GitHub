@@ -1,4 +1,6 @@
 import { synchronizeRepositories } from '../services/sync-service.js';
+import { RawResponseStore } from '../cache/raw-store.js';
+import { nodeFileSystem } from '../services/node-file-system.js';
 
 import type { OperationalCommandModule } from './types.js';
 
@@ -16,6 +18,14 @@ export const syncCommand: OperationalCommandModule = {
       profile: context.configuration.collection.profile,
       concurrency: context.configuration.budget.concurrency,
       synchronizedAt: new Date().toISOString(),
+      ...(context.configuration.output.retainRawResponses
+        ? {
+            rawStore: new RawResponseStore(
+              nodeFileSystem,
+              context.configuration.directories.output,
+            ),
+          }
+        : {}),
     });
     return {
       ...result,

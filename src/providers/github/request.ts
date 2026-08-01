@@ -1,7 +1,8 @@
 import type { Logger } from '../../logging/logger.js';
+import { createHash } from 'node:crypto';
 import type { Clock, Sleeper } from '../../services/ports.js';
 import type { Outcome, ProviderError, ProviderErrorKind } from '../outcome.js';
-import type { ResourceObservation } from '../provider.js';
+import type { ProviderRawResponse, ResourceObservation } from '../provider.js';
 
 import { classifyHttpError, providerError } from './errors.js';
 import { parseLastPage } from './link-header.js';
@@ -82,6 +83,7 @@ export class GitHubRequester {
     ResourceKey,
     ResourceObservation & { readonly subject: string | null }
   >();
+  private readonly raw = new Map<string, ProviderRawResponse>();
 
   public constructor(private readonly options: GitHubRequesterOptions) {
     this.random = options.random ?? Math.random;
@@ -150,6 +152,12 @@ export class GitHubRequester {
       .filter((observation) => observation.subject === subject)
       .map(({ key, etag, fetchedAt }) => ({ key, etag, fetchedAt }))
       .sort((left, right) => (left.key < right.key ? -1 : left.key > right.key ? 1 : 0));
+  }
+
+  public rawResponses(): readonly ProviderRawResponse[] {
+    return [...this.raw.values()].sort((left, right) =>
+      left.name < right.name ? -1 : left.name > right.name ? 1 : 0,
+    );
   }
 
   /** Returns the whole `Attempt`, so the settle loop above can honour `Retry-After` too. */
@@ -320,6 +328,12 @@ export class GitHubRequester {
         },
       };
 
+    // An upstream echo must never turn credential retention into a debugging feature.
+    if (!text.includes(this.options.token)) {
+      const name = rawResponseName(spec);
+      this.raw.set(name, { name, contents: text });
+    }
+
     let raw: unknown;
     try {
       raw = text.length === 0 ? null : JSON.parse(text);
@@ -374,4 +388,10 @@ export class GitHubRequester {
       };
     }
   }
+}
+
+function rawResponseName(spec: RequestSpec): string {
+  const readable = spec.resource.replace(/[^A-Za-z0-9.-]+/g, '-').slice(0, 80);
+  const suffix = createHash('sha256').update(spec.url).digest('hex').slice(0, 12);
+  return `${readable}-${suffix}`;
 }

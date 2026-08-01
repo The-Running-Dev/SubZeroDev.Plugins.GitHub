@@ -1,0 +1,1014 @@
+{
+  "$id": "https://plugins-github.subzerodev.com/schemas/1.0.0/projects.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "projects": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "branches": {
+            "additionalProperties": false,
+            "properties": {
+              "branches": {
+                "items": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "isDefault": {
+                      "type": "boolean"
+                    },
+                    "lastCommitSha": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "name": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "protected": {
+                      "anyOf": [
+                        {
+                          "type": "boolean"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "isDefault",
+                    "protected",
+                    "lastCommitSha"
+                  ],
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              "total": {
+                "anyOf": [
+                  {
+                    "maximum": 9007199254740991,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "total",
+              "branches"
+            ],
+            "type": "object"
+          },
+          "contributors": {
+            "additionalProperties": false,
+            "properties": {
+              "contributors": {
+                "items": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "accountType": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "contributions": {
+                      "maximum": 9007199254740991,
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    "login": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "profileUrl": {
+                      "anyOf": [
+                        {
+                          "format": "uri",
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "login",
+                    "contributions",
+                    "profileUrl",
+                    "accountType"
+                  ],
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              "total": {
+                "anyOf": [
+                  {
+                    "maximum": 9007199254740991,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "truncated": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "total",
+              "truncated",
+              "contributors"
+            ],
+            "type": "object"
+          },
+          "diagnostics": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "code": {
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "detail": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "message": {
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "resource": {
+                  "anyOf": [
+                    {
+                      "format": "uri",
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "retryable": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "code",
+                "message",
+                "resource",
+                "detail",
+                "retryable"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "portfolio": {
+            "additionalProperties": false,
+            "properties": {
+              "businessRelevance": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "category": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "demoUrl": {
+                "anyOf": [
+                  {
+                    "format": "uri",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "displayName": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "displayOrder": {
+                "anyOf": [
+                  {
+                    "maximum": 9007199254740991,
+                    "minimum": -9007199254740991,
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "documentationUrl": {
+                "anyOf": [
+                  {
+                    "format": "uri",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "endedAt": {
+                "anyOf": [
+                  {
+                    "pattern": "^\\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01])T([01]\\d|2[0-3]):[0-5]\\d:([0-5]\\d|60)(\\.\\d{1,9})?Z$",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "featured": {
+                "type": "boolean"
+              },
+              "hidden": {
+                "type": "boolean"
+              },
+              "notes": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "personalContribution": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "screenshots": {
+                "items": {
+                  "format": "uri",
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "startedAt": {
+                "anyOf": [
+                  {
+                    "pattern": "^\\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01])T([01]\\d|2[0-3]):[0-5]\\d:([0-5]\\d|60)(\\.\\d{1,9})?Z$",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "status": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "summary": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "technologies": {
+                "items": {
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            },
+            "required": [
+              "featured",
+              "hidden",
+              "displayName",
+              "summary",
+              "category",
+              "status",
+              "displayOrder",
+              "technologies",
+              "demoUrl",
+              "documentationUrl",
+              "screenshots",
+              "businessRelevance",
+              "personalContribution",
+              "startedAt",
+              "endedAt",
+              "notes"
+            ],
+            "type": "object"
+          },
+          "releases": {
+            "additionalProperties": false,
+            "properties": {
+              "latest": {
+                "anyOf": [
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "assets": {
+                        "items": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "contentType": {
+                              "anyOf": [
+                                {
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "downloadCount": {
+                              "anyOf": [
+                                {
+                                  "maximum": 9007199254740991,
+                                  "minimum": 0,
+                                  "type": "integer"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "downloadUrl": {
+                              "anyOf": [
+                                {
+                                  "format": "uri",
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "name": {
+                              "minLength": 1,
+                              "type": "string"
+                            },
+                            "size": {
+                              "maximum": 9007199254740991,
+                              "minimum": 0,
+                              "type": "integer"
+                            }
+                          },
+                          "required": [
+                            "name",
+                            "downloadUrl",
+                            "contentType",
+                            "size",
+                            "downloadCount"
+                          ],
+                          "type": "object"
+                        },
+                        "type": "array"
+                      },
+                      "isDraft": {
+                        "type": "boolean"
+                      },
+                      "isPrerelease": {
+                        "type": "boolean"
+                      },
+                      "name": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "publishedAt": {
+                        "anyOf": [
+                          {
+                            "pattern": "^\\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01])T([01]\\d|2[0-3]):[0-5]\\d:([0-5]\\d|60)(\\.\\d{1,9})?Z$",
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "tagName": {
+                        "minLength": 1,
+                        "type": "string"
+                      },
+                      "url": {
+                        "anyOf": [
+                          {
+                            "format": "uri",
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      }
+                    },
+                    "required": [
+                      "tagName",
+                      "name",
+                      "publishedAt",
+                      "isDraft",
+                      "isPrerelease",
+                      "url",
+                      "assets"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "total": {
+                "anyOf": [
+                  {
+                    "maximum": 9007199254740991,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "total",
+              "latest"
+            ],
+            "type": "object"
+          },
+          "repository": {
+            "additionalProperties": false,
+            "properties": {
+              "capabilities": {
+                "additionalProperties": false,
+                "properties": {
+                  "discussions": {
+                    "type": "boolean"
+                  },
+                  "downloads": {
+                    "type": "boolean"
+                  },
+                  "issues": {
+                    "type": "boolean"
+                  },
+                  "pages": {
+                    "type": "boolean"
+                  },
+                  "projects": {
+                    "type": "boolean"
+                  },
+                  "wiki": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "issues",
+                  "projects",
+                  "wiki",
+                  "pages",
+                  "downloads",
+                  "discussions"
+                ],
+                "type": "object"
+              },
+              "cloneUrl": {
+                "anyOf": [
+                  {
+                    "format": "uri",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "createdAt": {
+                "anyOf": [
+                  {
+                    "pattern": "^\\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01])T([01]\\d|2[0-3]):[0-5]\\d:([0-5]\\d|60)(\\.\\d{1,9})?Z$",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "defaultBranch": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "description": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "documentationUrl": {
+                "anyOf": [
+                  {
+                    "format": "uri",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "homepageUrl": {
+                "anyOf": [
+                  {
+                    "format": "uri",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "identity": {
+                "additionalProperties": false,
+                "properties": {
+                  "provider": {
+                    "minLength": 1,
+                    "pattern": "^[a-z0-9-]+$",
+                    "type": "string"
+                  },
+                  "providerId": {
+                    "pattern": "^[0-9]+$",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "provider",
+                  "providerId"
+                ],
+                "type": "object"
+              },
+              "isDisabled": {
+                "type": "boolean"
+              },
+              "isFork": {
+                "type": "boolean"
+              },
+              "isTemplate": {
+                "type": "boolean"
+              },
+              "license": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "name": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "owner": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "primaryLanguage": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "pushedAt": {
+                "anyOf": [
+                  {
+                    "pattern": "^\\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01])T([01]\\d|2[0-3]):[0-5]\\d:([0-5]\\d|60)(\\.\\d{1,9})?Z$",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "slug": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "sshUrl": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "status": {
+                "enum": [
+                  "active",
+                  "archived"
+                ],
+                "type": "string"
+              },
+              "topics": {
+                "items": {
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "updatedAt": {
+                "anyOf": [
+                  {
+                    "pattern": "^\\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01])T([01]\\d|2[0-3]):[0-5]\\d:([0-5]\\d|60)(\\.\\d{1,9})?Z$",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "visibility": {
+                "enum": [
+                  "public",
+                  "private",
+                  "internal"
+                ],
+                "type": "string"
+              },
+              "webUrl": {
+                "anyOf": [
+                  {
+                    "format": "uri",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "identity",
+              "owner",
+              "name",
+              "slug",
+              "description",
+              "visibility",
+              "status",
+              "isFork",
+              "isDisabled",
+              "isTemplate",
+              "createdAt",
+              "updatedAt",
+              "pushedAt",
+              "defaultBranch",
+              "homepageUrl",
+              "documentationUrl",
+              "webUrl",
+              "cloneUrl",
+              "sshUrl",
+              "topics",
+              "license",
+              "primaryLanguage",
+              "capabilities"
+            ],
+            "type": "object"
+          },
+          "schemaVersion": {
+            "pattern": "^1\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+            "type": "string"
+          },
+          "statistics": {
+            "additionalProperties": false,
+            "properties": {
+              "commits": {
+                "anyOf": [
+                  {
+                    "maximum": 9007199254740991,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "forks": {
+                "anyOf": [
+                  {
+                    "maximum": 9007199254740991,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "issues": {
+                "additionalProperties": false,
+                "properties": {
+                  "closed": {
+                    "anyOf": [
+                      {
+                        "maximum": 9007199254740991,
+                        "minimum": 0,
+                        "type": "integer"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "open": {
+                    "anyOf": [
+                      {
+                        "maximum": 9007199254740991,
+                        "minimum": 0,
+                        "type": "integer"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "open",
+                  "closed"
+                ],
+                "type": "object"
+              },
+              "pullRequests": {
+                "additionalProperties": false,
+                "properties": {
+                  "closed": {
+                    "anyOf": [
+                      {
+                        "maximum": 9007199254740991,
+                        "minimum": 0,
+                        "type": "integer"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "open": {
+                    "anyOf": [
+                      {
+                        "maximum": 9007199254740991,
+                        "minimum": 0,
+                        "type": "integer"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "open",
+                  "closed"
+                ],
+                "type": "object"
+              },
+              "sizeKilobytes": {
+                "anyOf": [
+                  {
+                    "maximum": 9007199254740991,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "stars": {
+                "anyOf": [
+                  {
+                    "maximum": 9007199254740991,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "watchers": {
+                "anyOf": [
+                  {
+                    "maximum": 9007199254740991,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "sizeKilobytes",
+              "stars",
+              "forks",
+              "watchers",
+              "commits",
+              "issues",
+              "pullRequests"
+            ],
+            "type": "object"
+          },
+          "tags": {
+            "additionalProperties": false,
+            "properties": {
+              "latest": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "total": {
+                "anyOf": [
+                  {
+                    "maximum": 9007199254740991,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "total",
+              "latest"
+            ],
+            "type": "object"
+          },
+          "technology": {
+            "additionalProperties": false,
+            "properties": {
+              "languages": {
+                "items": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "bytes": {
+                      "maximum": 9007199254740991,
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    "name": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "percentage": {
+                      "maximum": 100,
+                      "minimum": 0,
+                      "multipleOf": 0.01,
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "bytes",
+                    "percentage"
+                  ],
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              "primaryLanguage": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "primaryLanguage",
+              "languages"
+            ],
+            "type": "object"
+          }
+        },
+        "required": [
+          "schemaVersion",
+          "repository",
+          "technology",
+          "statistics",
+          "branches",
+          "tags",
+          "releases",
+          "contributors",
+          "portfolio",
+          "diagnostics"
+        ],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "schemaVersion": {
+      "pattern": "^1\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "projects"
+  ],
+  "type": "object"
+}

@@ -208,6 +208,10 @@ export class GitHubProvider implements RepositoryProvider {
   public usage(): RequestUsage {
     return this.client.requester.usage();
   }
+
+  public rawResponses() {
+    return this.client.requester.rawResponses();
+  }
 }
 
 function baseCollection(

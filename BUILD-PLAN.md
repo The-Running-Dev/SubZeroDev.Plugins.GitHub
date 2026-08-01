@@ -67,7 +67,7 @@ schema sequenced to Milestone 6**
 - [x] Fixtures: minimum, complete, private, archived, fork, template, and Unicode, plus invalid
       fixtures proving paths for versions, timestamps, URLs, percentages, duplicate identities, and
       numeric provider IDs
-- [ ] `projects.schema.json` generated with `z.toJSONSchema()` — do not add `zod-to-json-schema`,
+- [x] `projects.schema.json` generated with `z.toJSONSchema()` — do not add `zod-to-json-schema`,
       which targets Zod 3. **Sequenced to Milestone 6** (`IMPLEMENTATION-PLAN.md` §8), which owns the
       generator and the drift test; it is listed here only because the schemas it generates from are
       defined here
@@ -190,10 +190,10 @@ retains prior valid data, and records actionable diagnostics.
 
 ## Milestone 6 — Serializers and exports
 
-- [ ] Deterministic `projects.json`, `projects.schema.json`, `statistics.json`, `summary.json`,
+- [x] Deterministic `projects.json`, `projects.schema.json`, `statistics.json`, `summary.json`,
       `projects.yaml`, and `sync-report.json`
-- [ ] Optional `raw/` retention, off by default and excluded from determinism comparison
-- [ ] Every document serialized to staging before any is renamed
+- [x] Optional `raw/` retention, off by default and excluded from determinism comparison
+- [x] Every document serialized to staging before any is renamed
 
 **Exit:** golden-file tests byte-stable across runs; every document validates against its schema;
 export failure leaves the previous complete output set intact.

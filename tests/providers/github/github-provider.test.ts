@@ -393,6 +393,8 @@ describe('GitHubProvider collection', () => {
       stub.requests.find((request) => request.url.pathname.endsWith('/languages'))?.headers,
     ).toMatchObject({ 'if-none-match': '"languages-etag"' });
     expect(client.usage()).toMatchObject({ primaryRequests: 6, searchRequests: 0 });
+    expect(client.rawResponses()).toHaveLength(6);
+    expect(JSON.stringify(client.rawResponses())).not.toContain(token.value);
   });
 
   it('reuses normalized cached values on 304 responses at strictly lower core cost', async () => {

@@ -1,0 +1,40 @@
+{
+  "schemaVersion": "1.0.0",
+  "summary": {
+    "archived": 0,
+    "forks": 0,
+    "languages": [
+      {
+        "bytes": 2,
+        "name": "TypeScript",
+        "percentage": 66.67
+      },
+      {
+        "bytes": 1,
+        "name": "Rust",
+        "percentage": 33.33
+      }
+    ],
+    "largest": {
+      "provider": "github",
+      "providerId": "2"
+    },
+    "mostActive": {
+      "provider": "github",
+      "providerId": "2"
+    },
+    "newest": {
+      "provider": "github",
+      "providerId": "2"
+    },
+    "oldest": {
+      "provider": "github",
+      "providerId": "2"
+    },
+    "private": 0,
+    "public": 2,
+    "releases": 0,
+    "stars": 8,
+    "total": 2
+  }
+}

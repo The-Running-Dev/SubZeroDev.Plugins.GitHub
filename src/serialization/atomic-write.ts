@@ -1,7 +1,7 @@
 import { dirname, join } from 'node:path';
 
 import type { FileSystemPort } from '../services/ports.js';
-import { confinedPath } from './path-confinement.js';
+import { confinedPath, confinedRealPath } from './path-confinement.js';
 
 export interface StagedFile {
   readonly relativePath: string;
@@ -30,7 +30,7 @@ export class StagingArea {
   }
 
   public async stage(relativePath: string, contents: string): Promise<StagedFile> {
-    const destinationPath = confinedPath(this.liveRoot, relativePath);
+    const destinationPath = await confinedRealPath(this.fileSystem, this.liveRoot, relativePath);
     const stagingPath = confinedPath(this.stagingRoot, relativePath);
     await this.fileSystem.mkdir(dirname(stagingPath), { recursive: true });
     await this.fileSystem.writeFile(stagingPath, new TextEncoder().encode(contents));
