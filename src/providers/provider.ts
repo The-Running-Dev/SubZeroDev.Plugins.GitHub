@@ -1,4 +1,5 @@
 import type { Repository } from '../models/repository.js';
+import type { Project } from '../models/project.js';
 
 import type { Outcome, ProviderError } from './outcome.js';
 
@@ -35,10 +36,17 @@ export interface DiscoveredRepository {
   readonly repository: Repository;
 }
 
-export interface CollectionResult {
-  readonly repository: Repository;
-  readonly diagnostics: readonly string[];
-}
+export type CollectionResult = Pick<
+  Project,
+  | 'repository'
+  | 'technology'
+  | 'statistics'
+  | 'branches'
+  | 'tags'
+  | 'releases'
+  | 'contributors'
+  | 'diagnostics'
+>;
 
 export interface RequestUsage {
   readonly primaryRequests: number;

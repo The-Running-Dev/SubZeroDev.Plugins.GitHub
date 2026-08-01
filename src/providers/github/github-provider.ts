@@ -1,6 +1,7 @@
 import type { ResolvedToken } from '../../configuration/environment.js';
 import type { Logger } from '../../logging/logger.js';
 import type { Clock, Sleeper } from '../../services/ports.js';
+import type { Diagnostic } from '../../models/diagnostics.js';
 import type {
   CollectionProfile,
   CollectionResult,
@@ -16,9 +17,16 @@ import type { Outcome, ProviderError } from '../outcome.js';
 import { createGitHubClient, type GitHubClient } from './client.js';
 import { discoverOwnedRepositories, githubUserSchema } from './discovery.js';
 import { providerError } from './errors.js';
-import { mapRepository } from './mapping/repository.js';
+import { mapCoreMetadata, mapRepository, type GitHubCoreMetadata } from './mapping/repository.js';
 import type { RequestBudget } from './rate-limit.js';
 import { githubUrl } from './urls.js';
+import { collectLanguages } from './collect/languages.js';
+import { collectReleases } from './collect/releases.js';
+import { collectPageCount } from './collect/counts.js';
+import { collectContributors } from './collect/contributors.js';
+import { collectIssueAndPullRequestCounts } from './collect/search.js';
+import { collectBranches } from './collect/branches.js';
+import { collectTags } from './collect/tags.js';
 
 export interface CreateGitHubProviderOptions {
   readonly token: ResolvedToken;
@@ -31,12 +39,14 @@ export interface CreateGitHubProviderOptions {
   readonly fetch?: typeof globalThis.fetch;
   readonly random?: () => number;
   readonly baseUrl?: string;
+  readonly searchRequestsPerMinute?: number;
 }
 
 export class GitHubProvider implements RepositoryProvider {
   private readonly client: GitHubClient;
   private readonly documentationUrlTemplate: string | null;
   private readonly token: ResolvedToken;
+  private readonly coreMetadata = new Map<string, GitHubCoreMetadata>();
 
   public constructor(options: CreateGitHubProviderOptions) {
     this.client = createGitHubClient(options);
@@ -79,40 +89,152 @@ export class GitHubProvider implements RepositoryProvider {
         yield result;
         return;
       }
+      const repository = mapRepository(result.value, {
+        documentationUrlTemplate: this.documentationUrlTemplate,
+      });
+      this.coreMetadata.set(repository.identity.providerId, mapCoreMetadata(result.value));
       yield {
         ok: true,
         value: {
-          repository: mapRepository(result.value, {
-            documentationUrlTemplate: this.documentationUrlTemplate,
-          }),
+          repository,
         },
       };
     }
   }
 
-  /**
-   * Milestone 3 discovers and maps; per-repository collection is Milestone 4. Returning
-   * `ok` with an empty `diagnostics` would be indistinguishable from a real collection,
-   * so what is *not* collected is stated explicitly — Milestone 3.5 wires `sync` against
-   * this method, and a stub that reports silent success is one a caller believes.
-   */
-  public collect(
+  public async collect(
     target: DiscoveredRepository,
     profile: CollectionProfile,
     conditions: ResourceConditions,
   ): Promise<Outcome<CollectionResult, ProviderError>> {
-    const diagnostics = [
-      `collection_not_implemented: the ${profile} profile collects nothing beyond core discovery metadata before Milestone 4.`,
-    ];
-    if (Object.keys(conditions.etags).length > 0) {
+    const context = { client: this.client, target, conditions };
+    const metadata = this.coreMetadata.get(target.repository.identity.providerId) ?? {
+      sizeKilobytes: null,
+      stars: null,
+      forks: null,
+      watchers: null,
+      reportedOpenIssuesAndPullRequests: null,
+    };
+    const diagnostics = coreDiagnostics(target, metadata);
+
+    if (profile === 'basic') {
+      return {
+        ok: true,
+        value: baseCollection(target, metadata, diagnostics),
+      };
+    }
+
+    const [languages, releases, branches, tags] = await Promise.all([
+      collectLanguages(context),
+      collectReleases(context),
+      collectBranches(context),
+      collectTags(context),
+    ]);
+    diagnostics.push(
+      ...languages.diagnostics,
+      ...releases.diagnostics,
+      ...branches.diagnostics,
+      ...tags.diagnostics,
+    );
+
+    let commits: number | null = null;
+    let contributors: CollectionResult['contributors'] = {
+      total: null,
+      truncated: false,
+      contributors: [],
+    };
+    let issues: CollectionResult['statistics']['issues'] = { open: null, closed: null };
+    let pullRequests: CollectionResult['statistics']['pullRequests'] = {
+      open: null,
+      closed: null,
+    };
+    if (profile === 'detailed') {
+      const [contributorResult, commitResult, issueResult] = await Promise.all([
+        collectContributors(context),
+        collectPageCount(context, {
+          suffix: 'commits',
+          resource: `repository-commits:${target.repository.identity.providerId}`,
+          emptyMeaning: 'unavailable',
+        }),
+        collectIssueAndPullRequestCounts(context, metadata.reportedOpenIssuesAndPullRequests),
+      ]);
+      contributors = contributorResult.value ?? contributors;
+      commits = commitResult.value;
+      if (issueResult.value !== null) {
+        issues = issueResult.value.issues;
+        pullRequests = issueResult.value.pullRequests;
+      }
       diagnostics.push(
-        'conditional_requests_not_implemented: supplied ETags were not sent; conditional collection lands with the cache in Milestone 5.',
+        ...contributorResult.diagnostics,
+        ...commitResult.diagnostics,
+        ...issueResult.diagnostics,
       );
     }
-    return Promise.resolve({ ok: true, value: { repository: target.repository, diagnostics } });
+
+    return {
+      ok: true,
+      value: {
+        repository: target.repository,
+        technology: {
+          primaryLanguage: target.repository.primaryLanguage,
+          languages: [...(languages.value ?? [])],
+        },
+        statistics: {
+          sizeKilobytes: metadata.sizeKilobytes,
+          stars: metadata.stars,
+          forks: metadata.forks,
+          watchers: metadata.watchers,
+          commits,
+          issues,
+          pullRequests,
+        },
+        branches: branches.value ?? { total: null, branches: [] },
+        tags: tags.value ?? { total: null, latest: null },
+        releases: releases.value ?? { total: null, latest: null },
+        contributors,
+        diagnostics,
+      },
+    };
   }
 
   public usage(): RequestUsage {
     return this.client.requester.usage();
   }
+}
+
+function baseCollection(
+  target: DiscoveredRepository,
+  metadata: GitHubCoreMetadata,
+  diagnostics: readonly Diagnostic[],
+): CollectionResult {
+  return {
+    repository: target.repository,
+    technology: { primaryLanguage: target.repository.primaryLanguage, languages: [] },
+    statistics: {
+      sizeKilobytes: metadata.sizeKilobytes,
+      stars: metadata.stars,
+      forks: metadata.forks,
+      watchers: metadata.watchers,
+      commits: null,
+      issues: { open: null, closed: null },
+      pullRequests: { open: null, closed: null },
+    },
+    branches: { total: null, branches: [] },
+    tags: { total: null, latest: null },
+    releases: { total: null, latest: null },
+    contributors: { total: null, truncated: false, contributors: [] },
+    diagnostics: [...diagnostics],
+  };
+}
+
+function coreDiagnostics(target: DiscoveredRepository, metadata: GitHubCoreMetadata): Diagnostic[] {
+  return Object.entries(metadata)
+    .filter(([name, value]) => name !== 'reportedOpenIssuesAndPullRequests' && value === null)
+    .map(([name]) => ({
+      code: 'github_core_statistic_unavailable',
+      message: `GitHub did not provide the core statistic ${name}.`,
+      resource: target.repository.webUrl,
+      detail: name,
+      retryable: false,
+    }));
 }

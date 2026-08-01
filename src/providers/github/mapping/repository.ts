@@ -8,6 +8,13 @@ const nullableText = z
   .nullable()
   .optional()
   .transform((value) => value ?? null);
+const nullableCount = z
+  .number()
+  .int()
+  .nonnegative()
+  .nullable()
+  .optional()
+  .transform((value) => value ?? null);
 
 /** Minimum stable shape used from both `/user/repos` and `/repos/{owner}/{repo}`. */
 export const githubRepositorySchema = z.object({
@@ -42,6 +49,11 @@ export const githubRepositorySchema = z.object({
     .nullable()
     .optional(),
   language: nullableText,
+  size: nullableCount,
+  stargazers_count: nullableCount,
+  forks_count: nullableCount,
+  watchers_count: nullableCount,
+  open_issues_count: nullableCount,
   has_issues: z.boolean(),
   has_projects: z.boolean(),
   has_wiki: z.boolean(),
@@ -51,6 +63,24 @@ export const githubRepositorySchema = z.object({
 });
 
 export type GitHubRepository = z.infer<typeof githubRepositorySchema>;
+
+export interface GitHubCoreMetadata {
+  readonly sizeKilobytes: number | null;
+  readonly stars: number | null;
+  readonly forks: number | null;
+  readonly watchers: number | null;
+  readonly reportedOpenIssuesAndPullRequests: number | null;
+}
+
+export function mapCoreMetadata(source: GitHubRepository): GitHubCoreMetadata {
+  return {
+    sizeKilobytes: source.size,
+    stars: source.stargazers_count,
+    forks: source.forks_count,
+    watchers: source.watchers_count,
+    reportedOpenIssuesAndPullRequests: source.open_issues_count,
+  };
+}
 
 export function mapRepository(
   source: GitHubRepository,

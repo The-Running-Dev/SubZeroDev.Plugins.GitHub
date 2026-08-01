@@ -4,6 +4,12 @@ export type ResourceKey =
   | 'owned-repositories'
   | `repository:${string}`
   | `repository-languages:${string}`
+  | `repository-releases:${string}`
+  | `repository-latest-release:${string}`
+  | `repository-branches:${string}`
+  | `repository-tags:${string}`
+  | `repository-contributors:${string}`
+  | `repository-commits:${string}`
   | `repository-statistics:${string}`
   | `search:${string}`;
 

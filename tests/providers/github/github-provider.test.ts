@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import type { ResolvedToken } from '../../../src/configuration/environment.js';
 import type { Logger } from '../../../src/logging/logger.js';
 import { GitHubProvider } from '../../../src/providers/github/github-provider.js';
+import { budgetForProfile } from '../../../src/providers/github/endpoints.js';
 import type { Outcome, ProviderError } from '../../../src/providers/outcome.js';
 import type { DiscoveredRepository, RepositoryFilter } from '../../../src/providers/provider.js';
 import { fakeClock, fakeSleeper } from '../../support/fake-ports.js';
@@ -339,24 +340,238 @@ describe('GitHubProvider filters', () => {
 });
 
 describe('GitHubProvider collection', () => {
-  it('states what it did not collect rather than reporting a silent success', async () => {
+  it('uses discovery metadata without extra requests for the basic profile', async () => {
     const stub = repositoryPages(1);
-    const [discovered] = await discover(stub);
+    const client = provider(stub.fetch);
+    const discoveredResults: Outcome<DiscoveredRepository, ProviderError>[] = [];
+    for await (const result of client.discover(everything)) discoveredResults.push(result);
+    const [discovered] = discoveredResults;
     if (discovered?.ok !== true) throw new Error('expected a discovered repository');
 
-    const result = await provider(stub.fetch).collect(discovered.value, 'standard', {
-      etags: { 'repository:1': '"abc"' },
+    const result = await client.collect(discovered.value, 'basic', { etags: {} });
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.statistics).toMatchObject({
+        sizeKilobytes: 12,
+        stars: 3,
+        forks: 2,
+        watchers: 4,
+      });
+      expect(result.value.diagnostics).toEqual([]);
+    }
+    expect(client.usage().primaryRequests).toBe(1);
+  });
+
+  it('collects the complete standard profile within its declared budget', async () => {
+    const stub = collectionStub();
+    const client = provider(stub.fetch);
+    const discoveredResults: Outcome<DiscoveredRepository, ProviderError>[] = [];
+    for await (const result of client.discover(everything)) discoveredResults.push(result);
+    const [discovered] = discoveredResults;
+    if (discovered?.ok !== true) throw new Error('expected a discovered repository');
+
+    const result = await client.collect(discovered.value, 'standard', {
+      etags: { 'repository-languages:1': '"languages-etag"' },
     });
 
     expect(result.ok).toBe(true);
     if (result.ok) {
-      expect(result.value.repository).toEqual(discovered.value.repository);
-      expect(result.value.diagnostics).toHaveLength(2);
-      expect(result.value.diagnostics[0]).toContain('collection_not_implemented');
-      expect(result.value.diagnostics[1]).toContain('conditional_requests_not_implemented');
+      expect(result.value.technology.languages).toEqual([
+        { name: 'TypeScript', bytes: 2, percentage: 66.67 },
+        { name: 'Rust', bytes: 1, percentage: 33.33 },
+      ]);
+      expect(result.value.releases.total).toBe(2);
+      expect(result.value.branches).toEqual({
+        total: 1,
+        branches: [{ name: 'main', isDefault: true, protected: true, lastCommitSha: 'abc123' }],
+      });
+      expect(result.value.tags).toEqual({ total: 5, latest: 'v2.0.0' });
+      expect(result.value.diagnostics).toEqual([]);
+    }
+    expect(
+      stub.requests.find((request) => request.url.pathname.endsWith('/languages'))?.headers,
+    ).toMatchObject({ 'if-none-match': '"languages-etag"' });
+    expect(client.usage()).toMatchObject({ primaryRequests: 6, searchRequests: 0 });
+  });
+
+  it('collects detailed counts, marks the contributor cap, and matches the worst-case budget', async () => {
+    const stub = collectionStub(true);
+    const client = provider(stub.fetch);
+    const discoveredResults: Outcome<DiscoveredRepository, ProviderError>[] = [];
+    for await (const result of client.discover(everything)) discoveredResults.push(result);
+    const [discovered] = discoveredResults;
+    if (discovered?.ok !== true) throw new Error('expected a discovered repository');
+
+    const result = await client.collect(discovered.value, 'detailed', { etags: {} });
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.contributors).toMatchObject({ total: 500, truncated: true });
+      expect(result.value.branches.total).toBe(2_500);
+      expect(result.value.statistics).toMatchObject({
+        commits: 37,
+        issues: { open: 3, closed: 7 },
+        pullRequests: { open: 2, closed: 4 },
+      });
+      expect(result.value.diagnostics).toEqual([]);
+    }
+    const usage = client.usage();
+    expect({ core: usage.primaryRequests - 1, search: usage.searchRequests }).toEqual(
+      budgetForProfile('detailed'),
+    );
+  });
+
+  it('keeps an empty commit count null and attaches a diagnostic', async () => {
+    const stub = collectionStub(false, true);
+    const client = provider(stub.fetch);
+    const discoveredResults: Outcome<DiscoveredRepository, ProviderError>[] = [];
+    for await (const result of client.discover(everything)) discoveredResults.push(result);
+    const [discovered] = discoveredResults;
+    if (discovered?.ok !== true) throw new Error('expected a discovered repository');
+
+    const result = await client.collect(discovered.value, 'detailed', { etags: {} });
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.statistics.commits).toBeNull();
+      expect(result.value.diagnostics).toContainEqual(
+        expect.objectContaining({ code: 'github_commits_empty' }),
+      );
     }
   });
 });
+
+function collectionStub(fullBranchBudget = false, emptyCommits = false): FetchStub {
+  return createFetchStub([
+    {
+      method: 'GET',
+      pathPattern: /^\/user\/repos\?/,
+      respond: () => ({
+        status: 200,
+        body: [repositoryPayload({ id: 1, name: 'one', full_name: 'octo/one' })],
+      }),
+    },
+    {
+      method: 'GET',
+      pathPattern: /^\/repos\/octo\/one\/languages$/,
+      respond: () => ({ status: 200, body: { Rust: 1, TypeScript: 2 } }),
+    },
+    {
+      method: 'GET',
+      pathPattern: /^\/repos\/octo\/one\/releases\?/,
+      respond: () => ({
+        status: 200,
+        headers: {
+          link: '<https://example.test/repos/octo/one/releases?per_page=1&page=2>; rel="last"',
+        },
+        body: [
+          {
+            tag_name: 'v2.0.0',
+            name: 'Second',
+            published_at: '2026-01-01T00:00:00Z',
+            draft: false,
+            prerelease: false,
+            html_url: 'https://github.com/octo/one/releases/tag/v2.0.0',
+            assets: [],
+          },
+        ],
+      }),
+    },
+    {
+      method: 'GET',
+      pathPattern: /^\/repos\/octo\/one\/releases\/latest$/,
+      respond: () => ({
+        status: 200,
+        body: {
+          tag_name: 'v2.0.0',
+          name: 'Second',
+          published_at: '2026-01-01T00:00:00Z',
+          draft: false,
+          prerelease: false,
+          html_url: 'https://github.com/octo/one/releases/tag/v2.0.0',
+          assets: [],
+        },
+      }),
+    },
+    {
+      method: 'GET',
+      pathPattern: /^\/repos\/octo\/one\/branches\?/,
+      respond: (_request, callIndex) => ({
+        status: 200,
+        ...(fullBranchBudget
+          ? {
+              headers: {
+                link: '<https://example.test/repos/octo/one/branches?per_page=100&page=25>; rel="last"',
+              },
+            }
+          : {}),
+        body: fullBranchBudget
+          ? Array.from({ length: 100 }, (_, index) => ({
+              name: `branch-${String(callIndex * 100 + index)}`,
+              protected: false,
+              commit: { sha: `sha-${String(callIndex * 100 + index)}` },
+            }))
+          : [{ name: 'main', protected: true, commit: { sha: 'abc123' } }],
+      }),
+    },
+    {
+      method: 'GET',
+      pathPattern: /^\/repos\/octo\/one\/tags\?/,
+      respond: () => ({
+        status: 200,
+        headers: {
+          link: '<https://example.test/repos/octo/one/tags?per_page=1&page=5>; rel="last"',
+        },
+        body: [{ name: 'v2.0.0' }],
+      }),
+    },
+    {
+      method: 'GET',
+      pathPattern: /^\/repos\/octo\/one\/contributors\?/,
+      respond: (_request, callIndex) => ({
+        status: 200,
+        headers: {
+          link: '<https://example.test/repos/octo/one/contributors?per_page=100&page=6>; rel="last"',
+        },
+        body: Array.from({ length: 100 }, (_, index) => ({
+          login: `user-${String(callIndex * 100 + index)}`,
+          contributions: 1,
+          html_url: `https://github.com/user-${String(callIndex * 100 + index)}`,
+          type: 'User',
+        })),
+      }),
+    },
+    {
+      method: 'GET',
+      pathPattern: /^\/repos\/octo\/one\/commits\?/,
+      respond: () => ({
+        status: 200,
+        ...(emptyCommits
+          ? {}
+          : {
+              headers: {
+                link: '<https://example.test/repos/octo/one/commits?per_page=1&page=37>; rel="last"',
+              },
+            }),
+        body: emptyCommits ? [] : [{}],
+      }),
+    },
+    {
+      method: 'GET',
+      pathPattern: /^\/search\/issues\?/,
+      respond: (request) => {
+        const query = request.url.searchParams.get('q') ?? '';
+        const total = query.includes('is:pr is:open')
+          ? 2
+          : query.includes('is:pr is:closed')
+            ? 4
+            : 7;
+        return { status: 200, body: { total_count: total, incomplete_results: false, items: [] } };
+      },
+    },
+  ]);
+}
 
 describe('GitHubProvider usage', () => {
   it('reports one primary request per page and nothing else', async () => {

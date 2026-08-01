@@ -111,14 +111,16 @@ Future: GitHub App, OAuth.
 Statistics vary enormously in cost. Profiles make that an explicit choice rather than an
 implementer's constant.
 
-| Profile    | Contents                                                      | Approximate cost per repository |
-| ---------- | ------------------------------------------------------------- | ------------------------------- |
-| `basic`    | Repository endpoint data only                                 | 0 additional requests           |
-| `standard` | Basic plus languages, latest release, branch count, tag count | ~4                              |
-| `detailed` | Standard plus contributors, PR and issue counts, commit count | ~10, plus Search API            |
+| Profile    | Contents                                                            | Request budget per repository         |
+| ---------- | ------------------------------------------------------------------- | ------------------------------------- |
+| `basic`    | Repository endpoint data only                                       | 0 additional requests                 |
+| `standard` | Basic plus languages, releases, complete branches, and latest tag   | 5 typical; at most 29 core requests   |
+| `detailed` | Standard plus contributors, issue/PR counts, and total commit count | 7 typical; at most 35 core + 3 Search |
 
-Default is `standard`. Against the 5000/hour primary limit, a 200-repository account costs roughly
-800 requests on `standard` and 2000 on `detailed`.
+Default is `standard`. A typical 200-repository account costs roughly 1000 additional core requests
+on `standard`, or 1400 core and 600 Search requests on `detailed`. The higher caps cover repositories
+with up to 2500 branches and the GitHub contributor-list cap; collection stops with a diagnostic
+rather than silently publishing a truncated branch list.
 
 Budget guards, regardless of profile: default concurrency 4; warn at 50% of the primary limit
 consumed; stop cleanly at 90% and report partial success. Search API usage stays at or below 20 per
