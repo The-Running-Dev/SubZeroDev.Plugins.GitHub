@@ -2,6 +2,7 @@ export { contributorSchema, contributorSummarySchema } from './contributor.js';
 export { branchSchema } from './branch.js';
 export { diagnosticSchema } from './diagnostics.js';
 export {
+  orderProjectsByIdentity,
   parseProjectsDocument,
   projectsDocumentSchema,
   statisticsDocumentSchema,

@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import { diagnosticSchema } from './diagnostics.js';
+import { compareIdentity } from './identity.js';
 import { projectSchema } from './project.js';
 import { SCHEMA_VERSION, schemaVersionSchema } from './schema-version.js';
 import { summarySchema } from './summary.js';
@@ -66,4 +67,13 @@ export function parseProjectsDocument(input: unknown): ProjectsDocument {
   });
 
   return document;
+}
+
+/** Returns a new array in the canonical order without mutating caller-owned data. */
+export function orderProjectsByIdentity(
+  projects: readonly z.infer<typeof projectSchema>[],
+): z.infer<typeof projectSchema>[] {
+  return [...projects].sort((left, right) =>
+    compareIdentity(left.repository.identity, right.repository.identity),
+  );
 }

@@ -41,6 +41,22 @@ export default tseslint.config(
     },
   },
   {
+    files: ['src/models/**/*.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['../providers/**', '../../src/providers/**', '@octokit/*'],
+              message: 'Provider-specific types are forbidden in provider-neutral domain models.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
     files: ['src/commands/manifest.ts'],
     rules: {
       'no-restricted-imports': [

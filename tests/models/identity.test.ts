@@ -47,4 +47,36 @@ describe('provider identities', () => {
 
     expect(compareIdentity(beforeRename, afterRename)).toBe(0);
   });
+
+  it('is antisymmetric, transitive, and total across provider-sized IDs', () => {
+    const identities = [
+      '0',
+      '1',
+      '9',
+      '10',
+      '99',
+      '100',
+      '4294967295',
+      '9007199254740991',
+      '18446744073709551616',
+    ].map((providerId) => ({ provider: 'github', providerId }));
+
+    for (const left of identities) {
+      for (const right of identities) {
+        const forward = compareIdentity(left, right);
+        const reverse = compareIdentity(right, left);
+        expect(reverse).toBe(forward === 0 ? 0 : -forward);
+      }
+    }
+
+    for (const left of identities) {
+      for (const middle of identities) {
+        for (const right of identities) {
+          if (compareIdentity(left, middle) <= 0 && compareIdentity(middle, right) <= 0) {
+            expect(compareIdentity(left, right)).toBeLessThanOrEqual(0);
+          }
+        }
+      }
+    }
+  });
 });
