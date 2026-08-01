@@ -18,8 +18,8 @@ local C1–C9 assertions in a form intended to move into that runner later.
 | C3/C3b — output purity/envelopes | CLI/E2E tests parse exactly one JSON envelope and force trace logging to stderr.                         |
 | C4 — artifacts                   | Export E2E tests verify each declared artifact's path, bytes, and SHA-256.                               |
 | C5 — exit codes                  | E2E covers `0`, `2`, `3`, `4`, `5`, and `6`; `1` is never assigned.                                      |
-| C6 — secret canary               | Unit tests scrub nested values; container checks output and saved layers.                                |
-| C7 — container hygiene           | Image runs as UID 10001 under `--read-only` with read-only config/cache mounts.                          |
+| C6 — secret canary               | Unit tests scrub nested values; container checks output, mounted cache/output, and saved layers.         |
+| C7 — container hygiene           | Image runs as UID 10001 and a host-user override under `--read-only` with read-only config/cache mounts. |
 | C8 — determinism                 | Golden tests and two isolated container exports compare byte-for-byte.                                   |
 | C9 — path confinement            | Cross-platform traversal and symlink tests protect cache/output roots.                                   |
 

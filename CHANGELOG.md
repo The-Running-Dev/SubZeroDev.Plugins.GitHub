@@ -29,6 +29,8 @@ attestation.
 - Immutable-ID portfolio overrides and per-command generated input schemas.
 - Publishable npm metadata, three executable aliases, package-content validation, container
   conformance, and a provenance/signing release workflow.
+- AMD64/ARM64 image publication and one digest-bearing production manifest shared by the GitHub
+  Release attachment, packaged CLI, and npm tarball.
 
 - Versioned `github.config.json` schema, `.strict()` at every level, with **no field a token value
   could occupy** — only the _name_ of an environment variable is configurable. A schema-shape test

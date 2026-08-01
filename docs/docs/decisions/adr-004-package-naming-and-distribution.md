@@ -20,9 +20,11 @@ requires npm clients to authenticate even for public reads, which prevents a zer
 ## Decision
 
 Publish `@subzerodev/plugins-github` publicly on npmjs.com and attach the same tarball to its GitHub
-Release. Publish the OCI image to GHCR and sign it by digest. The release workflow also emits and
-attests a release manifest after the final image digest exists; the checked-in development manifest
-cannot embed that digest because doing so would change the image and therefore its digest.
+Release. Publish an AMD64/ARM64 OCI image to GHCR and sign its multi-platform digest. The release
+workflow materializes and attests a production manifest after that digest exists, then places the same
+manifest in the release attachment, the CLI's built manifest, and the npm tarball's `plugin.yaml`. The
+checked-in development manifest cannot embed the final digest because doing so would change the image
+and therefore its digest.
 
 Keep `subzerodev-github` as the canonical executable. Provide `sz-github` as a convenience alias and
 `plugins-github` solely so bare `npx @subzerodev/plugins-github` can resolve an unambiguous binary.

@@ -238,7 +238,8 @@ corrupt cache, and export failure; help text and README match actual options.
 
 The checked-in manifest remains explicitly developmental with a placeholder Docker digest. A final
 image cannot embed its own digest without changing that digest; the tagged release workflow therefore
-materializes and attests the non-development release manifest after the pushed digest exists.
+materializes and attests the non-development release manifest after the multi-platform image digest
+exists. The same production manifest is packed into the npm tarball and served by its CLI.
 
 **Release gate:** `npm ci && npm run check` on Windows and Linux; image runs non-root with writable
 mounts, exercised both as UID 10001 and under the host-user override; fixture flow runs
