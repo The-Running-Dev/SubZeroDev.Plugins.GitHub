@@ -24,6 +24,10 @@ export const statisticsDocumentSchema = z.object({
 
 export const syncReportDocumentSchema = z.object({
   schemaVersion: schemaVersionSchema,
+  repositories: z.object({
+    total: z.number().int().min(0),
+    partial: z.number().int().min(0),
+  }),
   diagnostics: z.array(diagnosticSchema),
 });
 

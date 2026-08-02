@@ -1,0 +1,203 @@
+{
+  "projects": [
+    {
+      "branches": {
+        "branches": [],
+        "total": 0
+      },
+      "contributors": {
+        "contributors": [],
+        "total": 0,
+        "truncated": false
+      },
+      "diagnostics": [],
+      "portfolio": {
+        "businessRelevance": null,
+        "category": null,
+        "demoUrl": null,
+        "displayName": null,
+        "displayOrder": null,
+        "documentationUrl": null,
+        "endedAt": null,
+        "featured": false,
+        "hidden": false,
+        "notes": null,
+        "personalContribution": null,
+        "screenshots": [],
+        "startedAt": null,
+        "status": null,
+        "summary": null,
+        "technologies": []
+      },
+      "releases": {
+        "latest": null,
+        "total": 0
+      },
+      "repository": {
+        "capabilities": {
+          "discussions": false,
+          "downloads": true,
+          "issues": true,
+          "pages": false,
+          "projects": false,
+          "wiki": false
+        },
+        "cloneUrl": "https://github.com/fixture/repository-2.git",
+        "createdAt": "2026-01-01T00:00:00Z",
+        "defaultBranch": "main",
+        "description": null,
+        "documentationUrl": null,
+        "homepageUrl": null,
+        "identity": {
+          "provider": "github",
+          "providerId": "2"
+        },
+        "isDisabled": false,
+        "isFork": false,
+        "isTemplate": false,
+        "license": null,
+        "name": "repository-2",
+        "owner": "fixture",
+        "primaryLanguage": "Rust",
+        "pushedAt": "2026-01-01T00:00:00Z",
+        "slug": "fixture/repository-2",
+        "sshUrl": "git@github.com:fixture/repository-2.git",
+        "status": "active",
+        "topics": [],
+        "updatedAt": "2026-01-01T00:00:00Z",
+        "visibility": "public",
+        "webUrl": "https://github.com/fixture/repository-2"
+      },
+      "schemaVersion": "1.0.0",
+      "statistics": {
+        "commits": 0,
+        "forks": 0,
+        "issues": {
+          "closed": 0,
+          "open": 0
+        },
+        "pullRequests": {
+          "closed": 0,
+          "open": 0
+        },
+        "sizeKilobytes": 0,
+        "stars": 3,
+        "watchers": 0
+      },
+      "tags": {
+        "latest": null,
+        "total": 0
+      },
+      "technology": {
+        "languages": [
+          {
+            "bytes": 1,
+            "name": "Rust",
+            "percentage": 100
+          }
+        ],
+        "primaryLanguage": "Rust"
+      }
+    },
+    {
+      "branches": {
+        "branches": [],
+        "total": 0
+      },
+      "contributors": {
+        "contributors": [],
+        "total": 0,
+        "truncated": false
+      },
+      "diagnostics": [],
+      "portfolio": {
+        "businessRelevance": null,
+        "category": null,
+        "demoUrl": null,
+        "displayName": null,
+        "displayOrder": null,
+        "documentationUrl": null,
+        "endedAt": null,
+        "featured": false,
+        "hidden": false,
+        "notes": null,
+        "personalContribution": null,
+        "screenshots": [],
+        "startedAt": null,
+        "status": null,
+        "summary": null,
+        "technologies": []
+      },
+      "releases": {
+        "latest": null,
+        "total": 0
+      },
+      "repository": {
+        "capabilities": {
+          "discussions": false,
+          "downloads": true,
+          "issues": true,
+          "pages": false,
+          "projects": false,
+          "wiki": false
+        },
+        "cloneUrl": "https://github.com/fixture/repository-10.git",
+        "createdAt": "2026-01-01T00:00:00Z",
+        "defaultBranch": "main",
+        "description": null,
+        "documentationUrl": null,
+        "homepageUrl": null,
+        "identity": {
+          "provider": "github",
+          "providerId": "10"
+        },
+        "isDisabled": false,
+        "isFork": false,
+        "isTemplate": false,
+        "license": null,
+        "name": "repository-10",
+        "owner": "fixture",
+        "primaryLanguage": "TypeScript",
+        "pushedAt": "2026-01-01T00:00:00Z",
+        "slug": "fixture/repository-10",
+        "sshUrl": "git@github.com:fixture/repository-10.git",
+        "status": "active",
+        "topics": [],
+        "updatedAt": "2026-01-01T00:00:00Z",
+        "visibility": "public",
+        "webUrl": "https://github.com/fixture/repository-10"
+      },
+      "schemaVersion": "1.0.0",
+      "statistics": {
+        "commits": 0,
+        "forks": 0,
+        "issues": {
+          "closed": 0,
+          "open": 0
+        },
+        "pullRequests": {
+          "closed": 0,
+          "open": 0
+        },
+        "sizeKilobytes": 0,
+        "stars": 5,
+        "watchers": 0
+      },
+      "tags": {
+        "latest": null,
+        "total": 0
+      },
+      "technology": {
+        "languages": [
+          {
+            "bytes": 2,
+            "name": "TypeScript",
+            "percentage": 100
+          }
+        ],
+        "primaryLanguage": "TypeScript"
+      }
+    }
+  ],
+  "schemaVersion": "1.0.0"
+}

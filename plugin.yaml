@@ -23,6 +23,32 @@ commands:
   - id: export
     description: Export normalized project documents.
     idempotency: idempotent
+    artifacts:
+      - name: projects-json
+        path: projects.json
+        mediaType: application/json
+        schemaRef: schemas/projects.schema.json
+        required: true
+      - name: projects-yaml
+        path: projects.yaml
+        mediaType: application/yaml
+        schemaRef: schemas/projects.schema.json
+      - name: projects-schema
+        path: projects.schema.json
+        mediaType: application/schema+json
+        required: true
+      - name: statistics-json
+        path: statistics.json
+        mediaType: application/json
+        required: true
+      - name: summary-json
+        path: summary.json
+        mediaType: application/json
+        required: true
+      - name: sync-report-json
+        path: sync-report.json
+        mediaType: application/json
+        required: true
 runtimes:
   - id: node-local
     type: node

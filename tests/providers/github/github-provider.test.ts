@@ -40,6 +40,7 @@ const everything: RepositoryFilter = {
 function provider(
   fetch: typeof globalThis.fetch,
   baseUrl = 'https://example.test',
+  retainRawResponses = false,
 ): GitHubProvider {
   return new GitHubProvider({
     token,
@@ -50,6 +51,7 @@ function provider(
     userAgent: 'test-agent',
     fetch,
     baseUrl,
+    retainRawResponses,
   });
 }
 
@@ -365,7 +367,7 @@ describe('GitHubProvider collection', () => {
 
   it('collects the complete standard profile within its declared budget', async () => {
     const stub = collectionStub();
-    const client = provider(stub.fetch);
+    const client = provider(stub.fetch, 'https://example.test', true);
     const discoveredResults: Outcome<DiscoveredRepository, ProviderError>[] = [];
     for await (const result of client.discover(everything)) discoveredResults.push(result);
     const [discovered] = discoveredResults;
@@ -393,6 +395,8 @@ describe('GitHubProvider collection', () => {
       stub.requests.find((request) => request.url.pathname.endsWith('/languages'))?.headers,
     ).toMatchObject({ 'if-none-match': '"languages-etag"' });
     expect(client.usage()).toMatchObject({ primaryRequests: 6, searchRequests: 0 });
+    expect(client.rawResponses()).toHaveLength(6);
+    expect(JSON.stringify(client.rawResponses())).not.toContain(token.value);
   });
 
   it('reuses normalized cached values on 304 responses at strictly lower core cost', async () => {

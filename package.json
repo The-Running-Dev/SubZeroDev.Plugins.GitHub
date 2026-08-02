@@ -20,8 +20,9 @@
     "dist"
   ],
   "scripts": {
-    "build": "npm run clean && npm run build:manifest && tsc -p tsconfig.build.json",
+    "build": "npm run clean && npm run build:manifest && npm run build:schemas && tsc -p tsconfig.build.json",
     "build:manifest": "tsx tools/build-manifest.ts",
+    "build:schemas": "tsx tools/build-schemas.ts",
     "clean": "node -e \"import('node:fs').then(({rmSync}) => rmSync('dist', {recursive:true, force:true,maxRetries:60,retryDelay:250}))\"",
     "dev": "tsx src/cli.ts",
     "format": "prettier --write .",

@@ -1,4 +1,5 @@
 import { CacheError, CacheVersionError, RepositoryCache } from '../cache/store.js';
+import type { RawResponseStore } from '../cache/raw-store.js';
 import type { CachedProject } from '../cache/reconcile.js';
 import { reconcileProjects } from '../cache/reconcile.js';
 import type { ProjectIdentity } from '../models/identity.js';
@@ -19,6 +20,7 @@ export async function synchronizeRepositories(input: {
   readonly profile: CollectionProfile;
   readonly concurrency: number;
   readonly synchronizedAt: string;
+  readonly rawStore?: RawResponseStore;
 }): Promise<CommandResult> {
   let previous: Awaited<ReturnType<RepositoryCache['read']>>;
   const cacheWarnings: Diagnostic[] = [];
@@ -169,6 +171,16 @@ export async function synchronizeRepositories(input: {
     synchronizedAt: errors.length === 0 ? input.synchronizedAt : (previous?.synchronizedAt ?? null),
     projects: next,
   });
+  if (input.rawStore !== undefined && input.provider.rawResponses !== undefined) {
+    try {
+      await input.rawStore.write(input.provider.rawResponses());
+    } catch (error: unknown) {
+      cacheWarnings.push({
+        code: 'raw_retention_failed',
+        message: `Normalized data was synchronized, but raw responses could not be retained: ${error instanceof Error ? error.message : 'unknown error'}`,
+      });
+    }
+  }
   const counts = countChanges(reconciliation.changes);
   return {
     outcome: { kind: errors.length === 0 ? 'succeeded' : 'partial' },

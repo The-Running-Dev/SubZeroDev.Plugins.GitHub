@@ -1,8 +1,10 @@
+import { createHash } from 'node:crypto';
+
 import type { Logger } from '../../logging/logger.js';
 import { compareCodeUnits } from '../../models/primitives.js';
 import type { Clock, Sleeper } from '../../services/ports.js';
 import type { Outcome, ProviderError, ProviderErrorKind } from '../outcome.js';
-import type { ResourceObservation } from '../provider.js';
+import type { ProviderRawResponse, ResourceObservation } from '../provider.js';
 
 import { classifyHttpError, providerError } from './errors.js';
 import { parseLastPage } from './link-header.js';
@@ -67,6 +69,7 @@ export interface GitHubRequesterOptions {
   readonly random?: () => number;
   readonly transientRetry?: TransientRetryPolicy;
   readonly searchRequestsPerMinute?: number;
+  readonly retainRawResponses?: boolean;
 }
 
 /** `once` also reports what the response asked us to wait; the retry decision is not its job. */
@@ -83,6 +86,7 @@ export class GitHubRequester {
     ResourceKey,
     ResourceObservation & { readonly subject: string | null }
   >();
+  private readonly raw = new Map<string, ProviderRawResponse>();
 
   public constructor(private readonly options: GitHubRequesterOptions) {
     this.random = options.random ?? Math.random;
@@ -151,6 +155,10 @@ export class GitHubRequester {
       .filter((observation) => observation.subject === subject)
       .map(({ key, etag, fetchedAt }) => ({ key, etag, fetchedAt }))
       .sort((left, right) => compareCodeUnits(left.key, right.key));
+  }
+
+  public rawResponses(): readonly ProviderRawResponse[] {
+    return [...this.raw.values()].sort((left, right) => compareCodeUnits(left.name, right.name));
   }
 
   /** Returns the whole `Attempt`, so the settle loop above can honour `Retry-After` too. */
@@ -321,6 +329,12 @@ export class GitHubRequester {
         },
       };
 
+    // An upstream echo must never turn credential retention into a debugging feature.
+    if (this.options.retainRawResponses === true && !text.includes(this.options.token)) {
+      const name = rawResponseName(spec);
+      this.raw.set(name, { name, contents: text });
+    }
+
     let raw: unknown;
     try {
       raw = text.length === 0 ? null : JSON.parse(text);
@@ -375,4 +389,10 @@ export class GitHubRequester {
       };
     }
   }
+}
+
+function rawResponseName(spec: RequestSpec): string {
+  const readable = spec.resource.replace(/[^A-Za-z0-9.-]+/g, '-').slice(0, 80);
+  const suffix = createHash('sha256').update(spec.url).digest('hex').slice(0, 12);
+  return `${readable}-${suffix}`;
 }

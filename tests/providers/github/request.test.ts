@@ -41,6 +41,7 @@ function requester(
     readonly transientRetry?: TransientRetryPolicy;
     readonly clock?: ReturnType<typeof fakeClock>;
     readonly searchRequestsPerMinute?: number;
+    readonly retainRawResponses?: boolean;
   } = {},
 ) {
   return new GitHubRequester({
@@ -56,6 +57,9 @@ function requester(
     ...(overrides.searchRequestsPerMinute === undefined
       ? {}
       : { searchRequestsPerMinute: overrides.searchRequestsPerMinute }),
+    ...(overrides.retainRawResponses === undefined
+      ? {}
+      : { retainRawResponses: overrides.retainRawResponses }),
   });
 }
 
@@ -80,6 +84,20 @@ afterEach(() => {
 });
 
 describe('GitHubRequester conditional requests', () => {
+  it('retains successful response bodies only when explicitly enabled', async () => {
+    const disabledStub = route(() => ({ status: 200, body: { retained: false } }));
+    const disabled = requester(disabledStub.fetch);
+    await disabled.get(spec, (value) => value);
+    expect(disabled.rawResponses()).toEqual([]);
+
+    const enabledStub = route(() => ({ status: 200, body: { retained: true } }));
+    const enabled = requester(enabledStub.fetch, { retainRawResponses: true });
+    await enabled.get(spec, (value) => value);
+
+    expect(enabled.rawResponses()).toHaveLength(1);
+    expect(enabled.rawResponses()[0]?.contents).toBe('{"retained":true}');
+  });
+
   it('sends the ETag and counts a 304 separately from primary quota', async () => {
     const stub = route(() => ({ status: 304, headers: { etag: '"next"' } }));
     const client = requester(stub.fetch);

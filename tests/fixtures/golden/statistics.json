@@ -1,0 +1,28 @@
+{
+  "schemaVersion": "1.0.0",
+  "statistics": {
+    "branches": 0,
+    "commits": 0,
+    "contributors": 0,
+    "forks": 0,
+    "issues": {
+      "closed": 0,
+      "open": 0
+    },
+    "pullRequests": {
+      "closed": 0,
+      "open": 0
+    },
+    "releases": 0,
+    "repositories": {
+      "archived": 0,
+      "private": 0,
+      "public": 2,
+      "total": 2
+    },
+    "sizeKilobytes": 0,
+    "stars": 8,
+    "tags": 0,
+    "watchers": 0
+  }
+}

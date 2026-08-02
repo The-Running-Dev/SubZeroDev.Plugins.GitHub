@@ -1,7 +1,7 @@
 import { dirname, join } from 'node:path';
 
 import type { FileSystemPort } from '../services/ports.js';
-import { confinedPath } from './path-confinement.js';
+import { confinedPath, confinedRealPath } from './path-confinement.js';
 
 export interface StagedFile {
   readonly relativePath: string;
@@ -19,6 +19,7 @@ export interface ArtifactReference {
  */
 export class StagingArea {
   private readonly files: StagedFile[] = [];
+  private readonly stagingDirectory: string;
   private readonly stagingRoot: string;
 
   public constructor(
@@ -26,13 +27,25 @@ export class StagingArea {
     private readonly liveRoot: string,
     runId: string,
   ) {
-    this.stagingRoot = confinedPath(liveRoot, `.staging-${runId}`);
+    this.stagingDirectory = `.staging-${runId}`;
+    this.stagingRoot = confinedPath(liveRoot, this.stagingDirectory);
   }
 
   public async stage(relativePath: string, contents: string): Promise<StagedFile> {
-    const destinationPath = confinedPath(this.liveRoot, relativePath);
-    const stagingPath = confinedPath(this.stagingRoot, relativePath);
+    const destinationPath = await confinedRealPath(this.fileSystem, this.liveRoot, relativePath);
+    await this.fileSystem.mkdir(this.stagingRoot, { recursive: true });
+    // Verify the existing staging root before creating descendants through it. A
+    // pre-created `.staging-<runId>` symlink must not redirect even directory creation.
+    await confinedRealPath(
+      this.fileSystem,
+      this.liveRoot,
+      `${this.stagingDirectory}/.confinement-check`,
+    );
+    const stagingRelativePath = `${this.stagingDirectory}/${relativePath}`;
+    let stagingPath = confinedPath(this.liveRoot, stagingRelativePath);
     await this.fileSystem.mkdir(dirname(stagingPath), { recursive: true });
+    // Re-check the deepest existing ancestor immediately before writing.
+    stagingPath = await confinedRealPath(this.fileSystem, this.liveRoot, stagingRelativePath);
     await this.fileSystem.writeFile(stagingPath, new TextEncoder().encode(contents));
     const file = { relativePath, stagingPath, destinationPath };
     this.files.push(file);
