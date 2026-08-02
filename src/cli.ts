@@ -20,11 +20,15 @@ import { buildEnvelope } from './output/envelope.js';
 import { failedOutcome, failureClassForCode } from './commands/outcome.js';
 import { writeResult } from './output/render.js';
 import { createCommandContext } from './services/command-context.js';
+import { PortfolioOverrideError } from './services/portfolio-service.js';
 
 type CliValues = Readonly<Record<string, string | boolean | readonly string[] | undefined>>;
 type ParsedArguments =
   | { readonly ok: true; readonly command: CommandName | null; readonly values: CliValues }
   | { readonly ok: false; readonly command: CommandName | null; readonly message: string };
+type OutputFormatResolution =
+  | { readonly ok: true; readonly value: 'text' | 'json' }
+  | { readonly ok: false; readonly message: string };
 
 export interface CliRuntime {
   readonly createContext?: typeof createCommandContext;
@@ -72,11 +76,18 @@ function parseArguments(argv: readonly string[]): ParsedArguments {
   }
 }
 
-function resolveOutputFormat(values: CliValues): 'text' | 'json' | null {
+function resolveOutputFormat(values: CliValues): OutputFormatResolution {
   const explicit = values['output-format'];
-  if (values['json'] === true && explicit === 'text') return null;
-  if (explicit !== undefined && explicit !== 'text' && explicit !== 'json') return null;
-  return values['json'] === true || explicit === 'json' ? 'json' : 'text';
+  if (explicit !== undefined && explicit !== 'text' && explicit !== 'json') {
+    return {
+      ok: false,
+      message: `Invalid --output-format: ${String(explicit)}. Expected text or json.`,
+    };
+  }
+  if (values['json'] === true && explicit === 'text') {
+    return { ok: false, message: '--json cannot be combined with --output-format text.' };
+  }
+  return { ok: true, value: values['json'] === true || explicit === 'json' ? 'json' : 'text' };
 }
 
 export function readVersion(): string {
@@ -111,8 +122,9 @@ export function runCli(argv: readonly string[]): number {
     process.stdout.write(buildHelp(parsed.command ?? undefined));
     return 0;
   }
-  if (resolveOutputFormat(parsed.values) === null) {
-    process.stderr.write('--json cannot be combined with --output-format text.\n');
+  const outputFormat = resolveOutputFormat(parsed.values);
+  if (!outputFormat.ok) {
+    process.stderr.write(`${outputFormat.message}\n`);
     return 2;
   }
   if (parsed.command === 'manifest') {
@@ -147,8 +159,8 @@ export async function runCliAsync(
   }
   const command = parsed.command;
   const outputFormat = resolveOutputFormat(parsed.values);
-  if (outputFormat === null) {
-    stderr.write('--json cannot be combined with --output-format text.\n');
+  if (!outputFormat.ok) {
+    stderr.write(`${outputFormat.message}\n`);
     return 2;
   }
   if (command === 'manifest') {
@@ -184,7 +196,7 @@ export async function runCliAsync(
     const module = await loader();
     if (!isOperationalCommandModule(module)) throw new Error(`Command ${command} cannot run.`);
     const invocation: CommandInvocation = {
-      global: { outputFormat, dryRun: parsed.values['dry-run'] === true },
+      global: { outputFormat: outputFormat.value, dryRun: parsed.values['dry-run'] === true },
       values: parsed.values,
     };
     const result = await module.run(context, invocation);
@@ -195,10 +207,15 @@ export async function runCliAsync(
       finishedAt: now().toISOString(),
       result,
     });
-    writeResult(envelope, outputFormat, stdout);
+    writeResult(envelope, outputFormat.value, stdout);
     return envelope.exitCode;
   } catch (error: unknown) {
-    const details = error instanceof ConfigurationError ? error : null;
+    const details =
+      error instanceof ConfigurationError
+        ? { code: error.code, message: error.message }
+        : error instanceof PortfolioOverrideError
+          ? { code: 'config_portfolio_overrides_invalid', message: error.message }
+          : null;
     const code = details?.code ?? 'command_execution_failed';
     const envelope = buildEnvelope({
       command,
@@ -222,7 +239,7 @@ export async function runCliAsync(
         ],
       },
     });
-    writeResult(envelope, outputFormat, stdout);
+    writeResult(envelope, outputFormat.value, stdout);
     return envelope.exitCode;
   }
 }
