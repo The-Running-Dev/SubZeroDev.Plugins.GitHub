@@ -16,3 +16,7 @@ export type ResourceKey =
 export function repositoryResourceKey(providerId: string): ResourceKey {
   return `repository:${providerId}`;
 }
+
+export function searchResourceKey(providerId: string, qualifiers: string): ResourceKey {
+  return `search:${providerId}:${qualifiers}`;
+}

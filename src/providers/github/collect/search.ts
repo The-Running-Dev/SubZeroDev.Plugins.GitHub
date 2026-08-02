@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 import type { Diagnostic } from '../../../models/diagnostics.js';
 import type { IssueSummary, PullRequestSummary } from '../../../models/statistics.js';
-import type { ResourceKey } from '../resource-keys.js';
+import { searchResourceKey } from '../resource-keys.js';
 import { githubUrl } from '../urls.js';
 import { correctOpenIssueCount } from '../open-issues.js';
 
@@ -61,7 +61,7 @@ async function searchCount(
   qualifiers: string,
 ): Promise<CollectorResult<number>> {
   const query = `repo:${context.target.repository.slug} ${qualifiers}`;
-  const resource: ResourceKey = `search:${query}`;
+  const resource = searchResourceKey(context.target.repository.identity.providerId, qualifiers);
   const url = githubUrl(context.client.baseUrl, 'search/issues', {
     q: query,
     per_page: '1',
