@@ -1,0 +1,71 @@
+{
+  "schemaVersion": "1.0.0",
+  "repository": {
+    "identity": { "provider": "github", "providerId": "18446744073709551616" },
+    "owner": "the-running-dev",
+    "name": "unicode",
+    "slug": "the-running-dev/unicode",
+    "description": "Українська 日本語 ✨",
+    "visibility": "public",
+    "status": "active",
+    "isFork": false,
+    "isDisabled": false,
+    "isTemplate": false,
+    "createdAt": null,
+    "updatedAt": null,
+    "pushedAt": null,
+    "defaultBranch": "main",
+    "homepageUrl": null,
+    "documentationUrl": null,
+    "webUrl": null,
+    "cloneUrl": null,
+    "sshUrl": null,
+    "topics": ["дані", "開発"],
+    "license": null,
+    "primaryLanguage": "文言",
+    "capabilities": {
+      "issues": true,
+      "projects": true,
+      "wiki": true,
+      "pages": false,
+      "downloads": true,
+      "discussions": false
+    }
+  },
+  "technology": {
+    "primaryLanguage": "文言",
+    "languages": [{ "name": "文言", "bytes": 1, "percentage": 100 }]
+  },
+  "statistics": {
+    "sizeKilobytes": null,
+    "stars": null,
+    "forks": null,
+    "watchers": null,
+    "commits": null,
+    "branches": null,
+    "tags": null,
+    "issues": { "open": null, "closed": null },
+    "pullRequests": { "open": null, "closed": null }
+  },
+  "releases": { "total": null, "latest": null },
+  "contributors": { "total": null, "truncated": false, "contributors": [] },
+  "portfolio": {
+    "featured": false,
+    "hidden": false,
+    "displayName": "Проєкт ✨",
+    "summary": "多言語 fixture",
+    "category": null,
+    "status": null,
+    "displayOrder": null,
+    "technologies": ["文言"],
+    "demoUrl": null,
+    "documentationUrl": null,
+    "screenshots": [],
+    "businessRelevance": null,
+    "personalContribution": null,
+    "startedAt": null,
+    "endedAt": null,
+    "notes": null
+  },
+  "diagnostics": []
+}

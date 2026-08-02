@@ -53,7 +53,9 @@ deliberate departures from that, both de-risking:
 - [x] Matrix check suite observed green on both Windows and Linux
 - [x] CLI exit codes defined, `1` reserved for uncaught exceptions
 
-## Milestone 1 — Domain contracts and canonical schemas — **not complete**
+## Milestone 1 — Domain contracts and canonical schemas — **implementation complete; generated
+
+schema sequenced to Milestone 6**
 
 - [x] Versioned `Project`, `Repository`, `LanguageStatistics`, `Release`, `ReleaseAsset`, `Branch`,
       `Contributor`, `RepositoryStatistics`, `Summary`, and the top-level documents
@@ -63,8 +65,9 @@ deliberate departures from that, both de-risking:
 - [x] Zod schemas as the source of truth, preferring `null` over `.optional()` for serialized fields
 - [x] One total order, `compareIdentity`, over UTF-16 code units — never `localeCompare`, whose answer
       varies with the environment's locale
-- [ ] **Fixtures: minimum, complete, private, archived, fork, template, Unicode.** `tests/fixtures/projects/`
-      does not exist, so the round-trip and invalid-fixture exit criteria below are unproven
+- [x] Fixtures: minimum, complete, private, archived, fork, template, and Unicode, plus invalid
+      fixtures proving paths for versions, timestamps, URLs, percentages, duplicate identities, and
+      numeric provider IDs
 - [ ] `projects.schema.json` generated with `z.toJSONSchema()` — do not add `zod-to-json-schema`,
       which targets Zod 3. **Sequenced to Milestone 6** (`IMPLEMENTATION-PLAN.md` §8), which owns the
       generator and the drift test; it is listed here only because the schemas it generates from are
@@ -75,7 +78,7 @@ percentages, and duplicate IDs fail with useful paths; a renamed repository reso
 identity; language percentages total 100 under a documented rounding rule; no provider type appears
 in a domain model.
 
-## Milestone 2 — Ports, configuration, and secret safety
+## Milestone 2 — Ports, configuration, and secret safety — **complete**
 
 - [x] Versioned `github.config.json`: filters, collection profile, directories, formats,
       concurrency, request budget, token variable name
@@ -113,7 +116,7 @@ rate-limit and partial-failure results means carrying per-resource ETags and a r
 which are Milestone 3 and Milestone 5 concepts. Fleshing them out now would mean guessing at shapes
 those milestones then have to change.
 
-## Milestone 3 — GitHub adapter and repository discovery
+## Milestone 3 — GitHub adapter and repository discovery — **complete**
 
 - [x] Client construction from the resolved environment token. **Amended:** requests go through
       `fetch` and this plugin's own wrapper, and `@octokit/rest` is removed — see
@@ -133,10 +136,10 @@ Test with mocked HTTP: empty, one-page, and multi-page accounts; filter combinat
 repositories and missing optional fields; 401, 403, 404, 429, 5xx, network interruption, and
 response-shape drift; primary and secondary rate limits.
 
-Still open here: the recorded-payload fixtures under `tests/fixtures/github/` that
-`IMPLEMENTATION-PLAN.md` §4 lists. Discovery, mapping, and error tests currently build payloads from
-`tests/support/github-payloads.ts`; Milestone 3.5 replaces those with real recorded shapes, which is
-the point of running against a real account before the statistics work.
+Recorded, sanitized payload fixtures under `tests/fixtures/github/` cover the minimum, complete,
+private, archived, fork, template, and Unicode repository cases, multi-page bodies, and representative
+error bodies. The shared payload builder reads the recorded complete fixture, so discovery and mapping
+tests exercise that shape rather than maintaining a second handwritten source.
 
 **Exit:** no GitHub client type resolves outside `providers/github` (ESLint-enforced, `src` and
 `tests`); every owned repository discovered exactly once, verified at page boundaries 0/1/99/100/101/201
