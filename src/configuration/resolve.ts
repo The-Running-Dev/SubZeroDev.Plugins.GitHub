@@ -13,13 +13,20 @@ export interface ResolvedConfiguration extends Configuration {
 export function resolveConfiguration(
   configuration: Configuration,
   configurationDirectory: string,
+  environment: Readonly<NodeJS.ProcessEnv> = {},
 ): ResolvedConfiguration {
   return {
     ...configuration,
     directories: {
       ...configuration.directories,
-      cache: resolve(configurationDirectory, configuration.directories.cache),
-      output: resolve(configurationDirectory, configuration.directories.output),
+      cache: resolve(
+        configurationDirectory,
+        environment['SUBZERODEV_PLUGIN_CACHE'] ?? configuration.directories.cache,
+      ),
+      output: resolve(
+        configurationDirectory,
+        environment['SUBZERODEV_PLUGIN_OUTPUT'] ?? configuration.directories.output,
+      ),
     },
     portfolio: {
       overrides:

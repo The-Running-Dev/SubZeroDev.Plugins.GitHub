@@ -149,7 +149,7 @@ back into the Milestone 1 fixtures.
 
 The plugin was originally `SubZeroDev.Automator.Plugins.GitHub`, packaged as
 `@subzerodev/automator-plugin-github`. That name asserted the plugin is a component of the Automator,
-which the architecture rejects. It is now `SubZeroDev.Plugins.GitHub` and `@subzerodev/plugin-github`
+which the architecture rejects. It is now `SubZeroDev.Plugins.GitHub` and `@subzerodev/plugins-github`
 — see the amendment in
 [`adr-001-hosting-and-versioning.md`](docs/docs/decisions/adr-001-hosting-and-versioning.md). Do not
 reintroduce the old form.
@@ -197,6 +197,7 @@ src/
 ├── cache/           cache implementations
 ├── commands/        CLI command handlers
 ├── configuration/   configuration loading and validation
+├── logging/         stderr logging and secret redaction
 ├── models/          provider-independent versioned models
 ├── output/          human-readable command output
 ├── providers/       provider contracts and GitHub implementation
@@ -204,6 +205,7 @@ src/
 └── services/        orchestration and application behavior
 
 tests/               Vitest tests
+tools/               deterministic build, schema, package, and release checks
 docs/docs/           authored documentation
 docs/docs/index.md   the /docs/ landing page — HAND-AUTHORED under this repository's
                      routeBasePath: 'docs'. The homepage generator only ever writes

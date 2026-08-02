@@ -10,9 +10,10 @@ CLI-first GitHub integration that produces provider-independent, versioned proje
 first plugin under the SubZeroDev plugin contract, and the reference implementation the others are
 scaffolded from.
 
-The scaffold builds and its command surface is stable, but the data commands are placeholders — see
-[`BUILD-PLAN.md`](https://github.com/The-Running-Dev/SubZeroDev.Plugins.GitHub/blob/main/BUILD-PLAN.md)
-for what is implemented and what is next.
+The application and release implementation is complete through Milestone 8. The first public package,
+signed image, and GitHub Release remain gated on the stacked pull requests merging and the tagged
+release workflow succeeding — see
+[`BUILD-PLAN.md`](https://github.com/The-Running-Dev/SubZeroDev.Plugins.GitHub/blob/main/BUILD-PLAN.md).
 
 ## Where to go
 

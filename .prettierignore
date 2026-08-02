@@ -14,6 +14,7 @@ schemas/contract/result-envelope.schema.json
 # layout and YAML quote style, defeating byte-for-byte drift and golden tests.
 schemas/projects.schema.json
 tests/fixtures/golden
+tests/fixtures/cache/seeded
 
 # Deliberately unparseable fixtures. Being invalid is what they assert — the loader
 # must report them as a stable error rather than crash — so a formatter cannot read

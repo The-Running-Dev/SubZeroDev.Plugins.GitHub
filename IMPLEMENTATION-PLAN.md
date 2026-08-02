@@ -1078,11 +1078,12 @@ file in `bytes` and `sha256`.
 ## 10. Milestone 8 — Docker, documentation, release
 
 **Files.** `Dockerfile` (config dir, cache/output dirs + ownership, OCI labels, corrected entrypoint).
-`.dockerignore` (exclude `docs`, `tests`, `.git`, `*.md` — currently only excludes
-`node_modules dist coverage .env .cache output`). `.github/workflows/ci.yml` (the matrix) plus a new
+`.dockerignore` (exclude `docs`, `tests`, `.git`, `*.md`, and local build/runtime output).
+`.github/workflows/ci.yml` (the matrix) plus a new
 `container` job. `.github/workflows/release.yml` (new: version-consistency check, `npm publish
 --provenance`, image build and signing, GitHub Release with the tarball attached — §1.8).
-`plugin.yaml` (real image digest replaces the placeholder). `package.json` (the rename to
+`plugin.yaml` (the release workflow replaces the packaged copy's placeholder with the final
+multi-platform digest; the checked-in source stays developmental). `package.json` (the rename to
 `@subzerodev/plugins-github`, remove `private: true`, add `license`/`repository`/`bugs`/`homepage`/
 `publishConfig`, the three `bin` entries, `files`, and `prepublishOnly` — all specified in §1.8).
 `CHANGELOG.md` (first entry). `docs/docs/guide/{getting-started,configuration,troubleshooting}.md`
@@ -1111,20 +1112,21 @@ container `export` test mounts read-only). Plus the rename touchpoints and new A
 
 **New `container` CI job:**
 
-| Step | Assertion                                                                                                                                |
-| ---- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| 1    | `docker run --rm --network none <img> manifest` → exit 0, one JSON doc, validates, labels match                                          |
-| 2    | `--help`/`--version` → 0, version equals manifest                                                                                        |
-| 3    | unknown command → exit 2                                                                                                                 |
-| 4    | `--user 10001:10001`, `id -u` ≠ 0                                                                                                        |
-| 5    | `--read-only`, config mounted `:ro`, cache/output writable; `validate` → single-doc stdout; exit 5 with no token, 0 with a fixture token |
-| 6    | `export --json` twice against a **read-only seeded cache**, comparing artifact bytes/digests                                             |
-| 7    | `GITHUB_TOKEN=<canary>` run; grep stdout/stderr/output/cache; `docker save \| tar -xO \| grep -c <canary>` = 0                           |
+| Step | Assertion                                                                                                                                                                                                      |
+| ---- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1    | `docker run --rm --network none <img> manifest` → exit 0, one JSON doc, validates, labels match                                                                                                                |
+| 2    | `--help`/`--version` → 0, version equals manifest                                                                                                                                                              |
+| 3    | unknown command → exit 2                                                                                                                                                                                       |
+| 4    | `--user 10001:10001`, `id -u` ≠ 0                                                                                                                                                                              |
+| 5    | `--read-only`, config mounted `:ro`, cache/output writable; `validate` → single-doc stdout; exit 5 with no token; a canary token reaches the network-disabled connectivity check, exits 3, and appears nowhere |
+| 6    | `export --json` twice against a **read-only seeded cache**, comparing artifact bytes/digests                                                                                                                   |
+| 7    | `GITHUB_TOKEN=<canary>` run; grep stdout/stderr/output/cache; `docker save \| tar -xO \| grep -c <canary>` = 0                                                                                                 |
 
 Step 6 is deliberate: a fixture-backed `sync` can't run in-container without a network fake, and adding
 a `--fixture-dir` seam to production code to enable a test is a smell. `export` reads **only** the
 cache, so mounting a committed seeded cache read-only gives a real in-container determinism check with
-no network and no production-code seam. The fixture-backed `sync` flow runs natively in the matrix job.
+no network and no production-code seam. The fixture-backed `validate` and `sync` flow runs natively in
+the matrix job; successful validation therefore needs no test-only container behavior.
 
 **Do not block M8 on the shared conformance suite** — it doesn't exist anywhere in the ecosystem yet.
 Implement C1–C9 as this repo's own container-job assertions, structured to be liftable into a shared

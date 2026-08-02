@@ -4,3 +4,8 @@ coverage
 .env
 .cache
 output
+docs
+tests
+.git
+.github
+*.md

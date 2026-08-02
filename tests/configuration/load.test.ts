@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { ConfigurationError } from '../../src/configuration/errors.js';
 import { loadConfiguration } from '../../src/configuration/load.js';
 import { resolveConfiguration } from '../../src/configuration/resolve.js';
+import { configurationSchema } from '../../src/configuration/schema.js';
 
 let directory: string;
 
@@ -86,5 +87,16 @@ describe('configuration path resolution', () => {
     expect(resolveConfiguration(loaded.configuration, loaded.directory).portfolio.overrides).toBe(
       join(directory, 'portfolio.json'),
     );
+  });
+
+  it('lets contract path environment variables override file paths', () => {
+    const configuration = configurationSchema.parse({ configVersion: '1.0.0' });
+    const resolved = resolveConfiguration(configuration, directory, {
+      SUBZERODEV_PLUGIN_CACHE: '../mounted-cache',
+      SUBZERODEV_PLUGIN_OUTPUT: 'mounted-output',
+    });
+
+    expect(resolved.directories.cache).toBe(resolve(directory, '../mounted-cache'));
+    expect(resolved.directories.output).toBe(resolve(directory, 'mounted-output'));
   });
 });

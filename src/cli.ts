@@ -187,7 +187,7 @@ export async function runCliAsync(
       configPath:
         typeof parsed.values['config'] === 'string'
           ? parsed.values['config']
-          : 'github.config.json',
+          : (process.env['SUBZERODEV_PLUGIN_CONFIG'] ?? 'github.config.json'),
       logLevel,
       quiet: parsed.values['quiet'] === true,
     });

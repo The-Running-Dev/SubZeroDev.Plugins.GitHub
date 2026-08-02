@@ -4,48 +4,47 @@ description: Install, validate, and run the SubZeroDev GitHub Plugin.
 sidebar_position: 1
 ---
 
-# Getting started
+# Getting Started
 
-The SubZeroDev GitHub Plugin currently provides a stable command surface and a
-versioned project model. The data commands remain explicit placeholders while
-their implementation milestones are in progress.
+The plugin validates access, synchronizes GitHub repositories into a local cache, lists and
+summarizes cached projects, and exports deterministic JSON and YAML documents.
 
 ## Requirements
 
 - Node.js 24 or later
-- npm
-- PowerShell 7 or later for the repository runner
-- Docker for container workflows
+- A GitHub token supplied through an environment variable
+- Docker or PowerShell 7 only for their respective workflows
 
-## Install and validate
+## Install
+
+Run without installing, install globally, or install as a project dependency:
 
 ```bash
-npm ci
-npm run check
-node dist/cli.js --help
+npx @subzerodev/plugins-github --help
+npm install -g @subzerodev/plugins-github
+npm install @subzerodev/plugins-github
 ```
 
-`npm run check` verifies formatting, lint rules, types, tests, and the production
-build.
+The canonical executable is `subzerodev-github`; `sz-github` is a convenience alias.
 
-## Run locally
+## Configure and run
 
-```powershell
-./run.ps1 -Mode Local -CliArgument '--help'
-./run.ps1 -Mode Local -SkipInstall -CliArgument '--version'
+Copy `examples/github.config.json`, put the token in its configured environment variable, and run:
+
+```bash
+subzerodev-github validate --json
+subzerodev-github sync --json
+subzerodev-github list
+subzerodev-github stats
+subzerodev-github export --json
 ```
 
-The runner installs locked dependencies unless `-SkipInstall` is supplied,
-builds the CLI, and passes remaining arguments to it.
-
-## Current limitation
-
-`sync`, `list`, `stats`, `export`, and `validate` currently report that they are
-not implemented and exit with code `3`. Help and version output are functional. The plugin contract
-additionally requires a `manifest` command; it does not exist in this scaffold yet — see the
-[CLI reference](../reference/cli.md).
+Tokens never belong in configuration or CLI arguments. For a repository clone, `npm ci && npm run
+check` runs formatting, lint, types, tests, generated artifacts, and the production build.
 
 ## Next
 
 - [Running in Docker](./docker.md) for the container workflow
-- [CLI reference](../reference/cli.md) for the full command and option surface
+- [Configuration](./configuration.md) for settings and precedence
+- [CLI reference](../reference/cli.md) for commands, options, and exit codes
+- [Troubleshooting](./troubleshooting.md) for cache, rate-limit, and export recovery

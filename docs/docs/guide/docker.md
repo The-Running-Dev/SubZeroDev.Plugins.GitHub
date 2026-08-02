@@ -1,71 +1,47 @@
 ---
 title: Running in Docker
-description: Build the image, run the CLI in a container, and understand the mounts and user.
-sidebar_position: 2
+description: Build the image, run the CLI read-only, and configure mounts and identity.
+sidebar_position: 3
 ---
 
 # Running in Docker
 
-## Build and run
-
-```powershell
-./run.ps1 -Mode Docker -BuildImage -CliArgument '--help'
-```
-
-Reuse an existing image by omitting `-BuildImage`, or select another tag with `-ImageName`.
-
-## Authentication
-
-For commands that need GitHub access, set the token in the current process and invoke the container.
-The runner forwards the environment variable by name; it never places the token value in the Docker
-command itself:
-
-```powershell
-$env:GITHUB_TOKEN = 'github_pat_replace_me'
-./run.ps1 -Mode Docker -BuildImage sync
-```
-
-This is the shape the command will take. `sync` exits `3` until its build milestone lands — see
-[`BUILD-PLAN.md`](https://github.com/The-Running-Dev/SubZeroDev.Plugins.GitHub/blob/main/BUILD-PLAN.md).
-
-## Mounts
-
-Docker mode mounts the host's `.cache/` and `output/` directories onto the plugin contract's
-plugin-neutral cache and output paths, `/var/lib/subzerodev/cache` and `/var/lib/subzerodev/output` —
-deliberately plugin-neutral names, so a host adapter needs no per-plugin knowledge of where to mount
-anything. Override the host-side directories with `-CachePath` and `-OutputPath`.
-
-> **Nothing in `src/` reads either path yet.** No configuration loader exists, so the contract's
-> read-only configuration mount at `/etc/subzerodev/plugin.config.json` is not wired up either. The
-> runner and the image declare the contract-correct invocation surface ahead of the code that
-> consumes it — see [Where the implementation stands](../reference/contract-conformance.md).
-
-## User and permissions
-
-The image runs as UID 10001, so bind-mounted host directories owned by another user are not writable.
-On Linux the runner passes the current host user by default. Override it with `-DockerUser`, or set
-it explicitly when invoking Docker directly:
-
-```bash
-docker run --rm --user "$(id -u):$(id -g)" \
-  --volume "$PWD/.cache:/var/lib/subzerodev/cache" \
-  --volume "$PWD/output:/var/lib/subzerodev/output" \
-  subzerodev-github:local validate
-```
-
-Docker Desktop on macOS and Windows maps ownership automatically, so no `--user` flag is needed
-there.
-
-## Direct Docker commands
-
-The equivalent commands without the PowerShell wrapper:
+Build locally and inspect commands that require no mounts or network:
 
 ```bash
 docker build -t subzerodev-github:local .
-docker run --rm subzerodev-github:local --help
-docker run --rm \
+docker run --rm --network none subzerodev-github:local manifest
+docker run --rm --network none subzerodev-github:local --help
+```
+
+The image runs as non-root UID `10001`. It reads configuration from
+`/etc/subzerodev/plugin.config.json` and uses `/var/lib/subzerodev/cache` and
+`/var/lib/subzerodev/output`. Mount configuration and a seeded cache read-only; only cache/output
+mounts need write access for the commands that update them.
+
+```bash
+docker run --rm --read-only \
   --env GITHUB_TOKEN \
+  --volume "$PWD/github.config.json:/etc/subzerodev/plugin.config.json:ro" \
   --volume "$PWD/.cache:/var/lib/subzerodev/cache" \
   --volume "$PWD/output:/var/lib/subzerodev/output" \
-  subzerodev-github:local sync
+  subzerodev-github:local sync --json
 ```
+
+Passing `--user "$(id -u):$(id -g)"` is supported when Linux bind-mount ownership requires the host
+identity. The image declares no `VOLUME`, so this override does not create or hide anonymous volumes.
+
+The runner offers the same workflow from PowerShell:
+
+```powershell
+$env:GITHUB_TOKEN = 'github_pat_replace_me'
+./run.ps1 -Mode Docker -BuildImage sync --json
+```
+
+The runner mounts `examples/github.config.json` by default. Pass
+`-ConfigPath ./github.config.json` after copying and customizing the example.
+
+The container conformance check builds the image, runs the bare manifest without network, verifies
+identity/version labels and non-root execution, exercises a read-only configuration and seeded cache,
+compares repeated exports byte-for-byte, and scans runtime output and the saved image for a secret
+canary.

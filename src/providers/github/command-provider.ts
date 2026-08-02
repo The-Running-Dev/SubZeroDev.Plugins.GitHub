@@ -39,7 +39,7 @@ export async function createGitHubCommandProvider(input: {
         warnAtPercentConsumed: input.configuration.budget.warnAtPercentConsumed,
         stopAtPercentConsumed: input.configuration.budget.stopAtPercentConsumed,
       },
-      userAgent: '@subzerodev/plugin-github',
+      userAgent: '@subzerodev/plugins-github',
       documentationUrlTemplate: input.configuration.documentation.urlTemplate,
       searchRequestsPerMinute: input.configuration.budget.searchRequestsPerMinute,
       retainRawResponses: input.configuration.output.retainRawResponses,

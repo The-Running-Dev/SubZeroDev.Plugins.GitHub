@@ -33,6 +33,14 @@ repository's own semantic versioning rather than a vendored template's. The deci
 are otherwise unaffected — see `README.md`, `AGENTS.md`, and the published documentation for the
 repository's actual current layout.
 
+## Amendment (2026-08-01)
+
+The singular package name in the earlier amendment is superseded before first publication. The npm
+package is `@subzerodev/plugins-github`, matching the repository's plural `Plugins` segment. The CLI
+name remains `subzerodev-github`, and the image remains `subzerodev-plugins-github`. Distribution and
+the compatibility aliases are recorded in
+[ADR-004](./adr-004-package-naming-and-distribution.md).
+
 ## Context
 
 SubZeroDev.Automator.Plugins.GitHub needs to run independently today and may later be consumed by

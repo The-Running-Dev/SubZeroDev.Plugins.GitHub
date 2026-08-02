@@ -31,6 +31,8 @@ param(
 
     [string]$DockerUser = '',
 
+    [string]$ConfigPath = (Join-Path $PSScriptRoot 'examples/github.config.json'),
+
     [string]$CachePath = (Join-Path $PSScriptRoot '.cache'),
 
     [string]$OutputPath = (Join-Path $PSScriptRoot 'output'),
@@ -108,6 +110,13 @@ try {
 
             $resolvedCache = (Resolve-Path -LiteralPath $CachePath).Path
             $resolvedOutput = (Resolve-Path -LiteralPath $OutputPath).Path
+            $configArguments = @()
+            if (Test-Path -LiteralPath $ConfigPath -PathType Leaf) {
+                $resolvedConfig = (Resolve-Path -LiteralPath $ConfigPath).Path
+                $configArguments = @(
+                    '--volume', "${resolvedConfig}:/etc/subzerodev/plugin.config.json:ro"
+                )
+            }
             # The image runs as UID 10001, so bind mounts owned by the host user are
             # unwritable on Linux unless the container runs as that user.
             $userArguments = @()
@@ -121,10 +130,10 @@ try {
             $arguments = if ($CliArgument.Count -gt 0) { $CliArgument } else { @('--help') }
             # SUBZERODEV_PLUGIN_CACHE / SUBZERODEV_PLUGIN_OUTPUT and their mount paths are the plugin
             # contract's names, deliberately plugin-neutral so a host adapter needs no per-plugin
-            # knowledge. Nothing in src/ reads them yet; see docs/docs/guide/docker.md.
+            # knowledge. The configuration resolver applies them after loading the mounted config.
             $dockerArguments = @(
                 'run', '--rm'
-            ) + $userArguments + @(
+            ) + $userArguments + $configArguments + @(
                 '--env', 'GITHUB_TOKEN',
                 '--env', 'SUBZERODEV_PLUGIN_CACHE=/var/lib/subzerodev/cache',
                 '--env', 'SUBZERODEV_PLUGIN_OUTPUT=/var/lib/subzerodev/output',
