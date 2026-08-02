@@ -260,7 +260,6 @@ function withoutNotModifiedDiagnostic(
     ? diagnostics.filter((diagnostic) => diagnostic.code !== 'github_not_modified_without_cache')
     : diagnostics;
 }
-
 function coreDiagnostics(target: DiscoveredRepository, metadata: GitHubCoreMetadata): Diagnostic[] {
   return Object.entries(metadata)
     .filter(([name, value]) => name !== 'reportedOpenIssuesAndPullRequests' && value === null)

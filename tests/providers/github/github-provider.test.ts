@@ -431,7 +431,6 @@ describe('GitHubProvider collection', () => {
       stub.requests.filter((request) => request.headers['if-none-match'] !== undefined),
     ).toHaveLength(4);
   });
-
   it('collects detailed counts, marks the contributor cap, and matches the worst-case budget', async () => {
     const stub = collectionStub(true);
     const client = provider(stub.fetch);
@@ -459,6 +458,21 @@ describe('GitHubProvider collection', () => {
     );
   });
 
+  it('does not mark exactly five terminal contributor pages as truncated', async () => {
+    const stub = collectionStub(false, false, 5);
+    const client = provider(stub.fetch);
+    const discoveredResults: Outcome<DiscoveredRepository, ProviderError>[] = [];
+    for await (const result of client.discover(everything)) discoveredResults.push(result);
+    const [discovered] = discoveredResults;
+    if (discovered?.ok !== true) throw new Error('expected a discovered repository');
+
+    const result = await client.collect(discovered.value, 'detailed', { etags: {} });
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.contributors).toMatchObject({ total: 500, truncated: false });
+    }
+  });
   it('keeps an empty commit count null and attaches a diagnostic', async () => {
     const stub = collectionStub(false, true);
     const client = provider(stub.fetch);
@@ -479,7 +493,11 @@ describe('GitHubProvider collection', () => {
   });
 });
 
-function collectionStub(fullBranchBudget = false, emptyCommits = false): FetchStub {
+function collectionStub(
+  fullBranchBudget = false,
+  emptyCommits = false,
+  contributorLastPage = 6,
+): FetchStub {
   return createFetchStub([
     {
       method: 'GET',
@@ -569,7 +587,7 @@ function collectionStub(fullBranchBudget = false, emptyCommits = false): FetchSt
       respond: (_request, callIndex) => ({
         status: 200,
         headers: {
-          link: '<https://example.test/repos/octo/one/contributors?per_page=100&page=6>; rel="last"',
+          link: `<https://example.test/repos/octo/one/contributors?per_page=100&page=${String(contributorLastPage)}>; rel="last"`,
         },
         body: Array.from({ length: 100 }, (_, index) => ({
           login: `user-${String(callIndex * 100 + index)}`,
@@ -647,7 +665,6 @@ function conditionalCollectionStub(): FetchStub {
     },
   ]);
 }
-
 describe('GitHubProvider usage', () => {
   it('reports one primary request per page and nothing else', async () => {
     const stub = repositoryPages(101);

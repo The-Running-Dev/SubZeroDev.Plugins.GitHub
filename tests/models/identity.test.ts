@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { compareIdentity, compareProviderId } from '../../src/models/identity.js';
+import {
+  compareIdentity,
+  compareProviderId,
+  projectIdentitySchema,
+} from '../../src/models/identity.js';
 import { compareCodeUnits } from '../../src/models/primitives.js';
 
 describe('code-unit ordering', () => {
@@ -27,6 +31,15 @@ describe('code-unit ordering', () => {
 });
 
 describe('provider identities', () => {
+  it('rejects leading-zero provider IDs so numeric ordering remains total', () => {
+    expect(projectIdentitySchema.safeParse({ provider: 'github', providerId: '01' }).success).toBe(
+      false,
+    );
+    expect(projectIdentitySchema.safeParse({ provider: 'github', providerId: '0' }).success).toBe(
+      true,
+    );
+  });
+
   it('orders numeric provider IDs instead of comparing their strings', () => {
     expect(compareProviderId('9', '10')).toBe(-1);
     expect(compareProviderId('18446744073709551616', '9')).toBe(1);

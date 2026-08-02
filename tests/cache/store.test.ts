@@ -33,6 +33,56 @@ describe('repository cache', () => {
     await expect(new RepositoryCache(memoryFileSystem(), 'cache').read()).resolves.toBeNull();
   });
 
+  it('does not remove an in-progress staging directory while reading', async () => {
+    const fileSystem = memoryFileSystem();
+    const cache = new RepositoryCache(fileSystem, 'cache', () => 'completed-run');
+    await cache.write({
+      owner,
+      synchronizedAt: '2026-07-30T00:00:00Z',
+      projects: [cached('1')],
+    });
+    const stagedPath = resolve('cache/.staging-active-run/repositories/2.json');
+    fileSystem.set(stagedPath, 'publication in progress');
+
+    await expect(listCachedRepositories(cache)).resolves.toMatchObject({
+      outcome: { kind: 'succeeded' },
+    });
+    expect(fileSystem.has(stagedPath)).toBe(true);
+  });
+
+  it('loads repository documents with bounded concurrency', async () => {
+    const fileSystem = memoryFileSystem();
+    const cache = new RepositoryCache(fileSystem, 'cache', () => 'test-run');
+    await cache.write({
+      owner,
+      synchronizedAt: '2026-07-30T00:00:00Z',
+      projects: Array.from({ length: 8 }, (_, index) => cached(String(index + 1))),
+    });
+
+    let inFlight = 0;
+    let maximum = 0;
+    const delayedFileSystem: FileSystemPort = {
+      ...fileSystem,
+      readFile: async (path) => {
+        if (!path.replaceAll('\\', '/').includes('/repositories/')) {
+          return fileSystem.readFile(path);
+        }
+        inFlight += 1;
+        maximum = Math.max(maximum, inFlight);
+        try {
+          await new Promise((resolveDelay) => setTimeout(resolveDelay, 1));
+          return await fileSystem.readFile(path);
+        } finally {
+          inFlight -= 1;
+        }
+      },
+    };
+
+    const snapshot = await new RepositoryCache(delayedFileSystem, 'cache').read();
+    expect(snapshot?.projects).toHaveLength(8);
+    expect(maximum).toBe(4);
+  });
+
   it('refuses malformed and incompatible manifests distinctly', async () => {
     const malformed = new RepositoryCache(
       memoryFileSystem({ [resolve('cache/manifest.json')]: '{ not json' }),
