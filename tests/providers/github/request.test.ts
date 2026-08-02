@@ -40,6 +40,8 @@ function requester(
     readonly logger?: Logger;
     readonly transientRetry?: TransientRetryPolicy;
     readonly clock?: ReturnType<typeof fakeClock>;
+    readonly searchRequestsPerMinute?: number;
+    readonly retainRawResponses?: boolean;
   } = {},
 ) {
   return new GitHubRequester({
@@ -52,6 +54,12 @@ function requester(
     rateLimits: overrides.tracker ?? new RateLimitTracker(budget),
     random: () => 0.5,
     ...(overrides.transientRetry === undefined ? {} : { transientRetry: overrides.transientRetry }),
+    ...(overrides.searchRequestsPerMinute === undefined
+      ? {}
+      : { searchRequestsPerMinute: overrides.searchRequestsPerMinute }),
+    ...(overrides.retainRawResponses === undefined
+      ? {}
+      : { retainRawResponses: overrides.retainRawResponses }),
   });
 }
 
@@ -76,6 +84,20 @@ afterEach(() => {
 });
 
 describe('GitHubRequester conditional requests', () => {
+  it('retains successful response bodies only when explicitly enabled', async () => {
+    const disabledStub = route(() => ({ status: 200, body: { retained: false } }));
+    const disabled = requester(disabledStub.fetch);
+    await disabled.get(spec, (value) => value);
+    expect(disabled.rawResponses()).toEqual([]);
+
+    const enabledStub = route(() => ({ status: 200, body: { retained: true } }));
+    const enabled = requester(enabledStub.fetch, { retainRawResponses: true });
+    await enabled.get(spec, (value) => value);
+
+    expect(enabled.rawResponses()).toHaveLength(1);
+    expect(enabled.rawResponses()[0]?.contents).toBe('{"retained":true}');
+  });
+
   it('sends the ETag and counts a 304 separately from primary quota', async () => {
     const stub = route(() => ({ status: 304, headers: { etag: '"next"' } }));
     const client = requester(stub.fetch);
@@ -462,5 +484,39 @@ describe('GitHubRequester budget guard', () => {
       expect(stopped.error).toMatchObject({ code: 'github_budget_stopped', kind: 'rate-limited' });
     // Three issued; the fourth never left the process.
     expect(stub.requests).toHaveLength(3);
+  });
+
+  it('stops a Search request before consuming a pacer admission', async () => {
+    const clock = fakeClock();
+    const sleeper = fakeSleeper(clock);
+    const tracker = new RateLimitTracker({
+      warnAtPercentConsumed: 50,
+      stopAtPercentConsumed: 90,
+      searchLimit: 10,
+    });
+    const stub = route(() => ({
+      status: 200,
+      headers: { 'x-ratelimit-limit': '10', 'x-ratelimit-remaining': '0' },
+      body: {},
+    }));
+    const client = requester(stub.fetch, {
+      clock,
+      sleeper,
+      tracker,
+      searchRequestsPerMinute: 1,
+    });
+    const searchSpec = {
+      ...spec,
+      resource: 'search:42:is:pr is:open',
+      bucket: 'search',
+    } as const;
+
+    await client.get(searchSpec, (value) => value);
+    const stopped = await client.get(searchSpec, (value) => value);
+
+    expect(stopped.ok).toBe(false);
+    if (!stopped.ok) expect(stopped.error.code).toBe('github_budget_stopped');
+    expect(stub.requests).toHaveLength(1);
+    expect(sleeper.slept).toEqual([]);
   });
 });

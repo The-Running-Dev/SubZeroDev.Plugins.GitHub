@@ -1,9 +1,9 @@
-import { synchronizeRepositories } from '../services/sync-service.js';
 import { RawResponseStore } from '../cache/raw-store.js';
 import { SYNC_OPTIONS } from '../models/command-options.js';
-import { failedOutcome } from './outcome.js';
 import { loadPortfolioOverrides } from '../services/portfolio-service.js';
+import { synchronizeRepositories } from '../services/sync-service.js';
 
+import { failedOutcome } from './outcome.js';
 import type { OperationalCommandModule } from './types.js';
 
 export const syncCommand: OperationalCommandModule = {

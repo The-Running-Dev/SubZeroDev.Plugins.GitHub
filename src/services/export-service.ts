@@ -2,7 +2,6 @@ import { randomUUID } from 'node:crypto';
 
 import { CacheError, type RepositoryCache } from '../cache/store.js';
 import type { ArtifactReference } from '../output/envelope.js';
-import { buildSyncReport } from '../output/sync-report.js';
 import { StagingArea } from '../serialization/atomic-write.js';
 import {
   buildOutputDocuments,
@@ -12,6 +11,7 @@ import {
 import { sha256 } from '../serialization/digest.js';
 import type { FileSystemPort } from './ports.js';
 import { applyPortfolioOverrides, type PortfolioOverrides } from './portfolio-service.js';
+import { buildSyncReport } from './sync-report.js';
 
 export class ExportError extends Error {
   public constructor(message: string) {
@@ -34,7 +34,6 @@ export async function exportCachedProjects(input: {
   const prepared = await previewCachedProjects({
     cache: input.cache,
     formats: input.formats,
-    reclaim: true,
     ...(input.portfolioOverrides === undefined
       ? {}
       : { portfolioOverrides: input.portfolioOverrides }),
@@ -58,7 +57,6 @@ export async function exportCachedProjects(input: {
 export async function previewCachedProjects(input: {
   readonly cache: RepositoryCache;
   readonly formats: readonly OutputFormat[];
-  readonly reclaim?: boolean;
   readonly portfolioOverrides?: PortfolioOverrides;
 }): Promise<{
   readonly documents: OutputDocumentSet;
@@ -66,7 +64,7 @@ export async function previewCachedProjects(input: {
 }> {
   let snapshot;
   try {
-    snapshot = await input.cache.read({ reclaim: input.reclaim ?? false });
+    snapshot = await input.cache.read();
   } catch (error: unknown) {
     if (error instanceof CacheError) throw new ExportError(error.message);
     throw error;

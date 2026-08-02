@@ -1,9 +1,10 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
+
+import { COMMAND_NAMES } from '../src/commands/types.js';
+import { buildCommandInputSchema } from '../src/serialization/command-schema.js';
 import { stringifyCanonical } from '../src/serialization/canonical-json.js';
 import { buildProjectsJsonSchema } from '../src/serialization/json-schema.js';
-import { buildCommandInputSchema } from '../src/serialization/command-schema.js';
-import { COMMAND_NAMES } from '../src/commands/types.js';
 
 const destination = resolve('schemas/projects.schema.json');
 await mkdir(dirname(destination), { recursive: true });

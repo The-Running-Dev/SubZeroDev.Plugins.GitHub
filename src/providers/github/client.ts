@@ -17,6 +17,7 @@ export interface GitHubClientOptions {
   readonly baseUrl?: string;
   readonly transientRetry?: TransientRetryPolicy;
   readonly searchRequestsPerMinute?: number;
+  readonly retainRawResponses?: boolean;
 }
 
 /**
@@ -54,6 +55,9 @@ export function createGitHubClient(options: GitHubClientOptions): GitHubClient {
       ...(options.searchRequestsPerMinute === undefined
         ? {}
         : { searchRequestsPerMinute: options.searchRequestsPerMinute }),
+      ...(options.retainRawResponses === undefined
+        ? {}
+        : { retainRawResponses: options.retainRawResponses }),
     }),
   };
 }

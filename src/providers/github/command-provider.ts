@@ -42,6 +42,7 @@ export async function createGitHubCommandProvider(input: {
       userAgent: '@subzerodev/plugin-github',
       documentationUrlTemplate: input.configuration.documentation.urlTemplate,
       searchRequestsPerMinute: input.configuration.budget.searchRequestsPerMinute,
+      retainRawResponses: input.configuration.output.retainRawResponses,
     }),
   };
 }

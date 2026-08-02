@@ -51,7 +51,6 @@ export const exportCommand: OperationalCommandModule = {
         ? await previewCachedProjects({
             cache: context.cache,
             formats,
-            reclaim: false,
             portfolioOverrides,
           })
         : await exportCachedProjects({

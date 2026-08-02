@@ -40,6 +40,7 @@ export interface CreateGitHubProviderOptions {
   readonly random?: () => number;
   readonly baseUrl?: string;
   readonly searchRequestsPerMinute?: number;
+  readonly retainRawResponses?: boolean;
 }
 
 export class GitHubProvider implements RepositoryProvider {
@@ -260,7 +261,6 @@ function withoutNotModifiedDiagnostic(
     ? diagnostics.filter((diagnostic) => diagnostic.code !== 'github_not_modified_without_cache')
     : diagnostics;
 }
-
 function coreDiagnostics(target: DiscoveredRepository, metadata: GitHubCoreMetadata): Diagnostic[] {
   return Object.entries(metadata)
     .filter(([name, value]) => name !== 'reportedOpenIssuesAndPullRequests' && value === null)

@@ -20,9 +20,10 @@ The plugin exists and is green: a Node.js 24+, strict TypeScript, ESM package wi
 carrying the Phase One command names, a minimal versioned `Project` schema, a provider-independent
 boundary, Vitest, ESLint, Prettier, and Docker.
 
-The commands intentionally return "not implemented". Configuration loading, token resolution, logging,
-and the domain models exist; no GitHub API, synchronization, cache, export, or statistics behaviour
-does.
+The `manifest`, `validate`, `sync`, and `list` commands are runnable. Configuration loading, token
+resolution, logging, domain models, GitHub repository discovery, and the minimal Milestone 3.5 cache
+exist. Extended metadata collection, statistics, incremental synchronization, and export remain for
+later milestones.
 
 **Milestone 0 is complete.** The `[ubuntu-latest, windows-latest]` matrix with `fail-fast: false` is
 configured and has now been observed green on both legs. The container job remains a Milestone 8
@@ -40,7 +41,7 @@ deliberate departures from that, both de-risking:
   as the code.
 - **The `manifest` command and envelope** come early, because conformance depends on them.
 
-## Milestone 0 — Close decisions and stabilize the scaffold — **partially complete**
+## Milestone 0 — Close decisions and stabilize the scaffold — **complete**
 
 - [x] Phase One boundary decisions recorded in
       [ADR-002](docs/docs/decisions/adr-002-phase-one-boundaries.md)
@@ -77,7 +78,7 @@ percentages, and duplicate IDs fail with useful paths; a renamed repository reso
 identity; language percentages total 100 under a documented rounding rule; no provider type appears
 in a domain model.
 
-## Milestone 2 — Ports, configuration, and secret safety
+## Milestone 2 — Ports, configuration, and secret safety — **complete**
 
 - [x] Versioned `github.config.json`: filters, collection profile, directories, formats,
       concurrency, request budget, token variable name
@@ -115,7 +116,7 @@ rate-limit and partial-failure results means carrying per-resource ETags and a r
 which are Milestone 3 and Milestone 5 concepts. Fleshing them out now would mean guessing at shapes
 those milestones then have to change.
 
-## Milestone 3 — GitHub adapter and repository discovery
+## Milestone 3 — GitHub adapter and repository discovery — **complete**
 
 - [x] Client construction from the resolved environment token. **Amended:** requests go through
       `fetch` and this plugin's own wrapper, and `@octokit/rest` is removed — see
@@ -135,10 +136,10 @@ Test with mocked HTTP: empty, one-page, and multi-page accounts; filter combinat
 repositories and missing optional fields; 401, 403, 404, 429, 5xx, network interruption, and
 response-shape drift; primary and secondary rate limits.
 
-Still open here: the recorded-payload fixtures under `tests/fixtures/github/` that
-`IMPLEMENTATION-PLAN.md` §4 lists. Discovery, mapping, and error tests currently build payloads from
-`tests/support/github-payloads.ts`; Milestone 3.5 replaces those with real recorded shapes, which is
-the point of running against a real account before the statistics work.
+Recorded, sanitized payload fixtures under `tests/fixtures/github/` cover the minimum, complete,
+private, archived, fork, template, and Unicode repository cases, multi-page bodies, and representative
+error bodies. The shared payload builder reads the recorded complete fixture, so discovery and mapping
+tests exercise that shape rather than maintaining a second handwritten source.
 
 **Exit:** no GitHub client type resolves outside `providers/github` (ESLint-enforced, `src` and
 `tests`); every owned repository discovered exactly once, verified at page boundaries 0/1/99/100/101/201
@@ -150,9 +151,11 @@ carry context without secrets.
 **The de-risking step.** Everything after this is built against real payloads.
 
 - [x] `validate`, plus a discovery-and-core-metadata `sync`, plus enough `list` to read the cache
-- [x] Run `validate → sync → list` against one real account
-- [x] Compare observed request counts against the budget; correct the budget if reality disagrees
-- [x] Fold every mapping correction back into the Milestone 1 fixtures
+- [x] Run `validate → sync → list` against one real account: 67 public repositories on 2026-08-01
+- [x] Compare observed request counts against the budget: one core request, matching the discovery
+      budget; zero search requests and zero retries
+- [x] Fold every mapping correction back into the Milestone 1 fixtures; the live run required no
+      corrections
 
 ## Milestone 4 — Metadata and statistics — **complete**
 
