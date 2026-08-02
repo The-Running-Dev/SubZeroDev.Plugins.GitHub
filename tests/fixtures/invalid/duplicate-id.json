@@ -42,8 +42,6 @@
         "forks": null,
         "watchers": null,
         "commits": null,
-        "branches": null,
-        "tags": null,
         "issues": { "open": null, "closed": null },
         "pullRequests": { "open": null, "closed": null }
       },
@@ -67,7 +65,9 @@
         "endedAt": null,
         "notes": null
       },
-      "diagnostics": []
+      "diagnostics": [],
+      "branches": { "total": null, "branches": [] },
+      "tags": { "total": null, "latest": null }
     },
     {
       "repository": {
@@ -110,8 +110,6 @@
         "forks": null,
         "watchers": null,
         "commits": null,
-        "branches": null,
-        "tags": null,
         "issues": { "open": null, "closed": null },
         "pullRequests": { "open": null, "closed": null }
       },
@@ -135,7 +133,9 @@
         "endedAt": null,
         "notes": null
       },
-      "diagnostics": []
+      "diagnostics": [],
+      "branches": { "total": null, "branches": [] },
+      "tags": { "total": null, "latest": null }
     }
   ]
 }

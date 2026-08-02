@@ -9,6 +9,11 @@ export function repositoryPayload(
 ): Record<string, unknown> {
   return {
     ...structuredClone(recordedRepository),
+    size: 12,
+    stargazers_count: 3,
+    forks_count: 2,
+    watchers_count: 4,
+    open_issues_count: 5,
     ...overrides,
   };
 }

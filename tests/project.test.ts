@@ -55,11 +55,11 @@ const minimumProject = {
     forks: 0,
     watchers: 0,
     commits: null,
-    branches: null,
-    tags: null,
     issues: { open: null, closed: null },
     pullRequests: { open: null, closed: null },
   },
+  branches: { total: null, branches: [] },
+  tags: { total: null, latest: null },
   releases: { total: null, latest: null },
   contributors: { total: null, truncated: false, contributors: [] },
   portfolio: {

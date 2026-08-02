@@ -45,8 +45,6 @@
     "forks": 3,
     "watchers": 5,
     "commits": 123,
-    "branches": 4,
-    "tags": 6,
     "issues": { "open": 2, "closed": 8 },
     "pullRequests": { "open": 1, "closed": 9 }
   },
@@ -108,5 +106,10 @@
       "detail": "Expected in the complete fixture",
       "retryable": false
     }
-  ]
+  ],
+  "branches": {
+    "total": 4,
+    "branches": [{ "name": "main", "isDefault": true, "protected": null, "lastCommitSha": null }]
+  },
+  "tags": { "total": 6, "latest": "v1.0.0" }
 }

@@ -18,8 +18,6 @@ export const repositoryStatisticsSchema = z.object({
   forks: nullableNonNegativeIntegerSchema,
   watchers: nullableNonNegativeIntegerSchema,
   commits: nullableNonNegativeIntegerSchema,
-  branches: nullableNonNegativeIntegerSchema,
-  tags: nullableNonNegativeIntegerSchema,
   issues: issueSummarySchema,
   pullRequests: pullRequestSummarySchema,
 });

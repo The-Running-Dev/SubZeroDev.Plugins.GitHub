@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+import { branchSummarySchema } from './branch.js';
 import { diagnosticSchema } from './diagnostics.js';
 import { languageStatisticsSchema } from './language.js';
 import { portfolioOverrideSchema } from './portfolio.js';
@@ -8,6 +9,7 @@ import { releaseSummarySchema } from './release.js';
 import { SCHEMA_VERSION, schemaVersionSchema } from './schema-version.js';
 import { contributorSummarySchema } from './contributor.js';
 import { repositoryStatisticsSchema } from './statistics.js';
+import { tagSummarySchema } from './tag.js';
 
 export const projectSchema = z.object({
   schemaVersion: schemaVersionSchema,
@@ -17,6 +19,8 @@ export const projectSchema = z.object({
     languages: z.array(languageStatisticsSchema),
   }),
   statistics: repositoryStatisticsSchema,
+  branches: branchSummarySchema,
+  tags: tagSummarySchema,
   releases: releaseSummarySchema,
   contributors: contributorSummarySchema,
   portfolio: portfolioOverrideSchema,

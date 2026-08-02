@@ -16,6 +16,7 @@ export interface GitHubClientOptions {
   readonly random?: () => number;
   readonly baseUrl?: string;
   readonly transientRetry?: TransientRetryPolicy;
+  readonly searchRequestsPerMinute?: number;
 }
 
 /**
@@ -50,6 +51,9 @@ export function createGitHubClient(options: GitHubClientOptions): GitHubClient {
       rateLimits,
       ...(options.random === undefined ? {} : { random: options.random }),
       ...(options.transientRetry === undefined ? {} : { transientRetry: options.transientRetry }),
+      ...(options.searchRequestsPerMinute === undefined
+        ? {}
+        : { searchRequestsPerMinute: options.searchRequestsPerMinute }),
     }),
   };
 }

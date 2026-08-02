@@ -157,16 +157,16 @@ carry context without secrets.
 - [x] Fold every mapping correction back into the Milestone 1 fixtures; the live run required no
       corrections
 
-## Milestone 4 — Metadata and statistics
+## Milestone 4 — Metadata and statistics — **complete**
 
-- [ ] Endpoint-and-budget table carrying, per field: endpoint, pagination, ETag support, cost,
+- [x] Endpoint-and-budget table carrying, per field: endpoint, pagination, ETag support, cost,
       rate-limit bucket, fallback, and whether absence is partial failure or valid null
-- [ ] Core metadata and the capability flags GitHub actually exposes
-- [ ] Language bytes and normalized percentages
-- [ ] Releases, tags, branches, contributors with truncation flag, issues and pull requests
-- [ ] Commit count via `per_page=1` and the `Link` `rel="last"` page number
-- [ ] Collection profiles: `basic`, `standard`, `detailed`
-- [ ] Aggregate statistics and summary selection with deterministic tie-breakers
+- [x] Core metadata and the capability flags GitHub actually exposes
+- [x] Language bytes and normalized percentages
+- [x] Releases, tags, branches, contributors with truncation flag, issues and pull requests
+- [x] Commit count via `per_page=1` and the `Link` `rel="last"` page number
+- [x] Collection profiles: `basic`, `standard`, `detailed`
+- [x] Aggregate statistics and summary selection with deterministic tie-breakers
 
 The hazards this must handle are in the
 [GitHub plugin specification](docs/docs/reference/specification.md): `202` while statistics compute, the

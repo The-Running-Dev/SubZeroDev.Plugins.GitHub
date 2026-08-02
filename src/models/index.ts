@@ -1,5 +1,5 @@
 export { contributorSchema, contributorSummarySchema } from './contributor.js';
-export { branchSchema } from './branch.js';
+export { branchSchema, branchSummarySchema } from './branch.js';
 export { diagnosticSchema } from './diagnostics.js';
 export {
   orderProjectsByIdentity,
@@ -24,9 +24,11 @@ export {
 export { repositoryStatisticsSchema } from './statistics.js';
 export { resultEnvelopeSchema } from './result-envelope.js';
 export { summarySchema } from './summary.js';
+export { tagSummarySchema } from './tag.js';
 
 export { compareIdentity, compareProviderId } from './identity.js';
-export type { Branch } from './branch.js';
+export type { Branch, BranchSummary } from './branch.js';
+export type { AggregateStatistics } from './aggregate.js';
 export type { Contributor, ContributorSummary } from './contributor.js';
 export type { Diagnostic } from './diagnostics.js';
 export type { LanguageByteCount, LanguageStatistics } from './language.js';
@@ -44,3 +46,5 @@ export type {
   SyncReportDocument,
 } from './documents.js';
 export type { Summary } from './summary.js';
+export type { TagSummary } from './tag.js';
+export { aggregateStatisticsSchema } from './aggregate.js';

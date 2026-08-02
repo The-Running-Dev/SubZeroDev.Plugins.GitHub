@@ -7,6 +7,7 @@ import { parseLastPage } from './link-header.js';
 import type { RateLimitBucket, RateLimitTracker } from './rate-limit.js';
 import type { ResourceKey } from './resource-keys.js';
 import { parseRetryAfterMilliseconds } from './retry-after.js';
+import { SearchRequestPacer } from './search-pacer.js';
 
 export interface RequestSpec {
   readonly resource: ResourceKey;
@@ -63,6 +64,7 @@ export interface GitHubRequesterOptions {
   readonly rateLimits: RateLimitTracker;
   readonly random?: () => number;
   readonly transientRetry?: TransientRetryPolicy;
+  readonly searchRequestsPerMinute?: number;
 }
 
 /** `once` also reports what the response asked us to wait; the retry decision is not its job. */
@@ -73,11 +75,17 @@ interface Attempt<T> {
 
 export class GitHubRequester {
   private readonly random: () => number;
+  private readonly searchPacer: SearchRequestPacer;
   private readonly transientRetry: TransientRetryPolicy;
 
   public constructor(private readonly options: GitHubRequesterOptions) {
     this.random = options.random ?? Math.random;
     this.transientRetry = options.transientRetry ?? DEFAULT_TRANSIENT_RETRY;
+    this.searchPacer = new SearchRequestPacer(
+      options.searchRequestsPerMinute ?? 20,
+      options.clock,
+      options.sleeper,
+    );
   }
 
   public async get<T>(
@@ -210,6 +218,7 @@ export class GitHubRequester {
         bucket: spec.bucket,
         percentConsumed: decision.percentConsumed,
       });
+    if (spec.bucket === 'search') await this.searchPacer.wait();
 
     const headers = new Headers({
       accept: 'application/vnd.github+json',

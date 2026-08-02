@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
 
-import { parseProjectsDocument, projectSchema } from '../../src/models/index.js';
+import {
+  parseProjectsDocument,
+  projectSchema,
+  statisticsDocumentSchema,
+} from '../../src/models/index.js';
 
 describe('project documents', () => {
   it('round-trips a complete provider-neutral project without a semantic change', () => {
@@ -42,6 +46,29 @@ describe('project documents', () => {
         'providerId',
       ]);
     }
+  });
+
+  it('keeps aggregate statistics distinct from curated summary selections', () => {
+    const parsed = statisticsDocumentSchema.parse({
+      schemaVersion: '1.0.0',
+      statistics: {
+        repositories: { total: 0, public: 0, private: 0, archived: 0 },
+        sizeKilobytes: 0,
+        stars: 0,
+        forks: 0,
+        watchers: 0,
+        commits: null,
+        branches: null,
+        tags: null,
+        releases: null,
+        contributors: null,
+        issues: { open: null, closed: null },
+        pullRequests: { open: null, closed: null },
+      },
+    });
+
+    expect(parsed.statistics.repositories.total).toBe(0);
+    expect('largest' in parsed.statistics).toBe(false);
   });
 });
 
@@ -89,11 +116,11 @@ const project = {
     forks: 2,
     watchers: 4,
     commits: 5,
-    branches: 1,
-    tags: 1,
     issues: { open: 0, closed: 1 },
     pullRequests: { open: 0, closed: 1 },
   },
+  branches: { total: 1, branches: [] },
+  tags: { total: 1, latest: 'v1.0.0' },
   releases: { total: 1, latest: null },
   contributors: { total: 1, truncated: false, contributors: [] },
   portfolio: {
