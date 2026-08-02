@@ -31,7 +31,7 @@ param(
 
     [string]$DockerUser = '',
 
-    [string]$ConfigPath = (Join-Path $PSScriptRoot 'github.config.json'),
+    [string]$ConfigPath = (Join-Path $PSScriptRoot 'examples/github.config.json'),
 
     [string]$CachePath = (Join-Path $PSScriptRoot '.cache'),
 

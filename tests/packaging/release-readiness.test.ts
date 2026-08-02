@@ -72,6 +72,16 @@ describe('release readiness', () => {
     expect(workflow).toContain('gh release create');
   });
 
+  it('validates dispatch release identity before writing workflow outputs', () => {
+    const workflow = readFileSync(resolve('.github/workflows/release.yml'), 'utf8');
+    const validation = workflow.indexOf('npx tsx tools/check-release-version.ts "$tag" "$version"');
+    const outputWrite = workflow.indexOf(`printf 'tag=%s\\n' "$tag" >> "$GITHUB_OUTPUT"`);
+
+    expect(validation).toBeGreaterThan(-1);
+    expect(outputWrite).toBeGreaterThan(validation);
+    expect(workflow).not.toContain('echo "tag=${tag}" >> "$GITHUB_OUTPUT"');
+  });
+
   it('refuses unprefixed tags and any version disagreement', () => {
     const versions = {
       packageVersion: '0.1.0',

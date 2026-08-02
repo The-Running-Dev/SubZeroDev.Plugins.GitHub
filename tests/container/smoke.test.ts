@@ -32,4 +32,15 @@ describe('container release surface', () => {
     expect(workflow).toContain('container:');
     expect(workflow).toContain('./build/Test-Container.ps1 -Build');
   });
+
+  it('streams a per-run canary scan and mounts a usable default configuration', () => {
+    const harness = readFileSync(resolve('build/Test-Container.ps1'), 'utf8');
+    const runner = readFileSync(resolve('run.ps1'), 'utf8');
+
+    expect(harness).toContain("[guid]::NewGuid().ToString('N')");
+    expect(harness).toContain('Test-FileContainsAscii');
+    expect(harness).not.toContain('ReadAllBytes');
+    expect(harness).not.toContain('SUBZERODEV_SECRET_CANARY_7b2c91');
+    expect(runner).toContain("Join-Path $PSScriptRoot 'examples/github.config.json'");
+  });
 });

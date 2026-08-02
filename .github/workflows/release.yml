@@ -68,10 +68,9 @@ jobs:
           tag="${GITHUB_REF_NAME}"
           if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then tag="${DISPATCH_TAG}"; fi
           version="${tag#v}"
-          echo "tag=${tag}" >> "$GITHUB_OUTPUT"
-          echo "version=${version}" >> "$GITHUB_OUTPUT"
-      - name: Verify source versions
-        run: npx tsx tools/check-release-version.ts "${{ steps.release.outputs.tag }}" "${{ steps.release.outputs.version }}"
+          npx tsx tools/check-release-version.ts "$tag" "$version"
+          printf 'tag=%s\n' "$tag" >> "$GITHUB_OUTPUT"
+          printf 'version=%s\n' "$version" >> "$GITHUB_OUTPUT"
       - name: Build local image and verify labels/container contract
         shell: pwsh
         run: ./build/Test-Container.ps1 -Build -Image '${{ env.IMAGE }}:${{ steps.release.outputs.version }}'

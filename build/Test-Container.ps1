@@ -29,6 +29,30 @@ function Invoke-DockerCapture {
     }
 }
 
+function Test-FileContainsAscii {
+    param(
+        [Parameter(Mandatory)][string]$Path,
+        [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$Value
+    )
+    $stream = [System.IO.File]::OpenRead($Path)
+    $buffer = [byte[]]::new(1024 * 1024)
+    $carry = ''
+    try {
+        while (($count = $stream.Read($buffer, 0, $buffer.Length)) -gt 0) {
+            $chunk = $carry + [System.Text.Encoding]::Latin1.GetString($buffer, 0, $count)
+            if ($chunk.Contains($Value, [System.StringComparison]::Ordinal)) {
+                return $true
+            }
+            $carryLength = [Math]::Min($Value.Length - 1, $chunk.Length)
+            $carry = $chunk.Substring($chunk.Length - $carryLength)
+        }
+        return $false
+    }
+    finally {
+        $stream.Dispose()
+    }
+}
+
 Push-Location $root
 try {
     & npm run build:manifest
@@ -121,7 +145,7 @@ try {
         ) @(5)
         if (($missingToken.Stdout | ConvertFrom-Json).exitCode -ne 5) { throw 'Missing token did not exit 5.' }
 
-        $canary = 'SUBZERODEV_SECRET_CANARY_7b2c91'
+        $canary = "SUBZERODEV_SECRET_CANARY_$([guid]::NewGuid().ToString('N'))"
         $canaryRun = Invoke-DockerCapture @(
             'run', '--rm', '--network', 'none', '--read-only', '--env', "GITHUB_TOKEN=$canary",
             '--volume', "${config}:/etc/subzerodev/plugin.config.json:ro",
@@ -131,18 +155,14 @@ try {
         ) @(3)
         if (($canaryRun.Stdout + $canaryRun.Stderr) -match [regex]::Escape($canary)) { throw 'Canary leaked from runtime output.' }
         foreach ($file in Get-ChildItem $canaryCache, $canaryOutput -Recurse -File) {
-            $contents = [System.Text.Encoding]::UTF8.GetString(
-                [System.IO.File]::ReadAllBytes($file.FullName)
-            )
-            if ($contents.Contains($canary)) {
+            if (Test-FileContainsAscii -Path $file.FullName -Value $canary) {
                 throw "Canary leaked into mounted data at $($file.FullName)."
             }
         }
         $archive = Join-Path $scratch 'image.tar'
         & docker save --output $archive $Image
         if ($LASTEXITCODE -ne 0) { throw 'docker save failed.' }
-        $bytes = [System.IO.File]::ReadAllBytes($archive)
-        if ([System.Text.Encoding]::UTF8.GetString($bytes).Contains($canary)) { throw 'Canary leaked into image layers.' }
+        if (Test-FileContainsAscii -Path $archive -Value $canary) { throw 'Canary leaked into image layers.' }
     }
     finally {
         Remove-Item $scratch -Recurse -Force

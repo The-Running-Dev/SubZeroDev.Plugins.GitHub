@@ -38,6 +38,9 @@ $env:GITHUB_TOKEN = 'github_pat_replace_me'
 ./run.ps1 -Mode Docker -BuildImage sync --json
 ```
 
+The runner mounts `examples/github.config.json` by default. Pass
+`-ConfigPath ./github.config.json` after copying and customizing the example.
+
 The container conformance check builds the image, runs the bare manifest without network, verifies
 identity/version labels and non-root execution, exercises a read-only configuration and seeded cache,
 compares repeated exports byte-for-byte, and scans runtime output and the saved image for a secret
