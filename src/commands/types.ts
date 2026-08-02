@@ -14,7 +14,15 @@ export interface CommandModule {
 }
 
 export interface OperationalCommandModule extends CommandModule {
-  run(context: CommandContext): Promise<CommandResult>;
+  run(context: CommandContext, invocation: CommandInvocation): Promise<CommandResult>;
+}
+
+export interface CommandInvocation {
+  readonly global: {
+    readonly outputFormat: 'text' | 'json';
+    readonly dryRun: boolean;
+  };
+  readonly values: Readonly<Record<string, string | boolean | readonly string[] | undefined>>;
 }
 
 export function isCommandName(value: string): value is CommandName {

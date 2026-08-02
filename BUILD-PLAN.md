@@ -201,12 +201,12 @@ retains prior valid data, and records actionable diagnostics.
 **Exit:** golden-file tests byte-stable across runs; every document validates against its schema;
 export failure leaves the previous complete output set intact.
 
-## Milestone 7 — Application services and CLI commands
+## Milestone 7 — Application services and CLI commands — **complete**
 
-- [ ] `sync`, `list`, `stats`, `export`, `validate`, `manifest`
-- [ ] Global and command-specific options through two-stage `parseArgs`
-- [ ] Result envelope and `--output-format`
-- [ ] Exit codes wired through
+- [x] `sync`, `list`, `stats`, `export`, `validate`, `manifest`
+- [x] Global and command-specific options through two-stage `parseArgs`
+- [x] Result envelope and `--output-format`
+- [x] Exit codes wired through
 
 **Exit:** command tests use injected services, needing neither network nor real filesystem;
 end-to-end tests cover success, invalid use, authentication failure, partial sync, rate limiting,

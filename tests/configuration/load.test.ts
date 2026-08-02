@@ -76,4 +76,15 @@ describe('configuration path resolution', () => {
       absolute,
     );
   });
+
+  it('resolves a portfolio override file relative to configuration', async () => {
+    const path = write(
+      '{ "configVersion": "1.0.0", "portfolio": { "overrides": "portfolio.json" } }',
+    );
+    const loaded = await loadConfiguration(path);
+
+    expect(resolveConfiguration(loaded.configuration, loaded.directory).portfolio.overrides).toBe(
+      join(directory, 'portfolio.json'),
+    );
+  });
 });

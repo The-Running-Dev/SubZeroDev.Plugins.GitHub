@@ -4,68 +4,96 @@ import { readFileSync, realpathSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import { parseArgs } from 'node:util';
 
-import { GLOBAL_OPTIONS } from './commands/global-options.js';
-import { isCommandName, type OperationalCommandModule } from './commands/types.js';
+import { ConfigurationError } from './configuration/index.js';
+import { buildHelp } from './commands/help.js';
+import { GLOBAL_OPTIONS, splitAtCommand } from './commands/global-options.js';
 import { writeManifest } from './commands/manifest.js';
 import { commandLoaders } from './commands/registry.js';
-import { createCommandContext } from './services/command-context.js';
-import { buildEnvelope, writeEnvelope } from './output/envelope.js';
+import {
+  type CommandInvocation,
+  type CommandName,
+  type OperationalCommandModule,
+} from './commands/types.js';
 import { isLogLevel } from './logging/logger.js';
-import { ConfigurationError } from './configuration/index.js';
+import { COMMAND_OPTIONS } from './models/command-options.js';
+import { buildEnvelope } from './output/envelope.js';
+import { failedOutcome, failureClassForCode } from './commands/outcome.js';
+import { writeResult } from './output/render.js';
+import { createCommandContext } from './services/command-context.js';
+import { PortfolioOverrideError } from './services/portfolio-service.js';
 
-const help = `SubZeroDev GitHub Plugin
-
-Usage:
-  subzerodev-github <command> [options]
-
-Commands:
-  manifest  Print the canonical plugin manifest
-  sync      Download or incrementally update repository data
-  list      Display repositories
-  stats     Display aggregate statistics
-  export    Export normalized project data
-  validate  Validate configuration and cached data
-
-Options:
-  -h, --help     Show help
-  -v, --version  Show version
-`;
-
+type CliValues = Readonly<Record<string, string | boolean | readonly string[] | undefined>>;
 type ParsedArguments =
-  | {
-      readonly ok: true;
-      readonly values: {
-        readonly help?: boolean;
-        readonly version?: boolean;
-        readonly config?: string;
-        readonly 'log-level'?: string;
-        readonly quiet?: boolean;
-      };
-      readonly positionals: readonly string[];
-    }
+  | { readonly ok: true; readonly command: CommandName | null; readonly values: CliValues }
+  | { readonly ok: false; readonly command: CommandName | null; readonly message: string };
+type OutputFormatResolution =
+  | { readonly ok: true; readonly value: 'text' | 'json' }
   | { readonly ok: false; readonly message: string };
 
+export interface CliRuntime {
+  readonly createContext?: typeof createCommandContext;
+  readonly stdout?: NodeJS.WritableStream;
+  readonly stderr?: NodeJS.WritableStream;
+  readonly now?: () => Date;
+}
+
 function parseArguments(argv: readonly string[]): ParsedArguments {
+  const split = splitAtCommand(argv);
   try {
-    const { values, positionals } = parseArgs({
-      args: [...argv],
+    const first = parseArgs({
+      args: [...split.before],
       allowPositionals: true,
       strict: true,
       options: GLOBAL_OPTIONS,
     });
+    if (first.positionals.length > 0) {
+      return {
+        ok: false,
+        command: null,
+        message: `Unknown command: ${first.positionals[0] ?? ''}`,
+      };
+    }
+    if (split.command === null)
+      return { ok: true, command: null, values: first.values as CliValues };
 
-    return { ok: true, values, positionals };
-  } catch (error) {
-    return { ok: false, message: error instanceof Error ? error.message : String(error) };
+    const second = parseArgs({
+      args: [...split.after],
+      allowPositionals: false,
+      strict: true,
+      options: { ...GLOBAL_OPTIONS, ...COMMAND_OPTIONS[split.command] },
+    });
+    return {
+      ok: true,
+      command: split.command,
+      values: { ...first.values, ...second.values },
+    };
+  } catch (error: unknown) {
+    return {
+      ok: false,
+      command: split.command,
+      message: error instanceof Error ? error.message : String(error),
+    };
   }
 }
 
+function resolveOutputFormat(values: CliValues): OutputFormatResolution {
+  const explicit = values['output-format'];
+  if (explicit !== undefined && explicit !== 'text' && explicit !== 'json') {
+    return {
+      ok: false,
+      message: `Invalid --output-format: ${String(explicit)}. Expected text or json.`,
+    };
+  }
+  if (values['json'] === true && explicit === 'text') {
+    return { ok: false, message: '--json cannot be combined with --output-format text.' };
+  }
+  return { ok: true, value: values['json'] === true || explicit === 'json' ? 'json' : 'text' };
+}
+
 export function readVersion(): string {
-  // Resolved from the module rather than hard-coded so it cannot drift from the package.
   const contents: unknown = JSON.parse(
     readFileSync(new URL('../package.json', import.meta.url), 'utf8'),
   );
-
   if (
     typeof contents !== 'object' ||
     contents === null ||
@@ -74,60 +102,77 @@ export function readVersion(): string {
   ) {
     throw new Error('package.json does not declare a string version.');
   }
-
   return contents.version;
 }
 
+/** Synchronous contract helper for help, version, manifest, and argument validation. */
 export function runCli(argv: readonly string[]): number {
   const parsed = parseArguments(argv);
   if (!parsed.ok) {
-    process.stderr.write(`Invalid arguments: ${parsed.message}\n\n${help}`);
+    process.stderr.write(
+      `${parsed.message.startsWith('Unknown command:') ? '' : 'Invalid arguments: '}${parsed.message}\n\n${buildHelp(parsed.command ?? undefined)}`,
+    );
     return 2;
   }
-
-  const { values, positionals } = parsed;
-
-  if (values.version) {
+  if (parsed.values['version'] === true) {
     process.stdout.write(`${readVersion()}\n`);
     return 0;
   }
-
-  if (values.help || positionals.length === 0) {
-    process.stdout.write(help);
+  if (parsed.values['help'] === true || parsed.command === null) {
+    process.stdout.write(buildHelp(parsed.command ?? undefined));
     return 0;
   }
-
-  const command = positionals[0];
-  if (!command || !isCommandName(command)) {
-    const invalidCommand = command ?? '';
-    process.stderr.write(`Unknown command: ${invalidCommand}\n\n${help}`);
+  const outputFormat = resolveOutputFormat(parsed.values);
+  if (!outputFormat.ok) {
+    process.stderr.write(`${outputFormat.message}\n`);
     return 2;
   }
-
-  if (command === 'manifest') {
+  if (parsed.command === 'manifest') {
     writeManifest(process.stdout);
     return 0;
   }
-
-  process.stderr.write(`Command "${command}" is not implemented yet.\n`);
+  process.stderr.write(`Command "${parsed.command}" requires asynchronous dispatch.\n`);
   return 3;
 }
 
-/** Asynchronous operational dispatcher; the synchronous helper above remains for CLI contract tests. */
-export async function runCliAsync(argv: readonly string[]): Promise<number> {
+export async function runCliAsync(
+  argv: readonly string[],
+  runtime: CliRuntime = {},
+): Promise<number> {
+  const stdout = runtime.stdout ?? process.stdout;
+  const stderr = runtime.stderr ?? process.stderr;
+  const now = runtime.now ?? (() => new Date());
   const parsed = parseArguments(argv);
-  if (!parsed.ok) return runCli(argv);
-  const { values, positionals } = parsed;
-  if (values.help || values.version || positionals.length === 0) return runCli(argv);
-
-  const command = positionals[0];
-  if (!command || !isCommandName(command) || command === 'manifest') return runCli(argv);
-  const loader = commandLoaders[command];
-  if (loader === undefined) return runCli(argv);
-
-  const logLevelValue = values['log-level'];
-  if (logLevelValue !== undefined && !isLogLevel(logLevelValue)) {
-    process.stderr.write(`Invalid --log-level: ${logLevelValue}\n`);
+  if (!parsed.ok) {
+    stderr.write(
+      `${parsed.message.startsWith('Unknown command:') ? '' : 'Invalid arguments: '}${parsed.message}\n\n${buildHelp(parsed.command ?? undefined)}`,
+    );
+    return 2;
+  }
+  if (parsed.values['version'] === true) {
+    stdout.write(`${readVersion()}\n`);
+    return 0;
+  }
+  if (parsed.values['help'] === true || parsed.command === null) {
+    stdout.write(buildHelp(parsed.command ?? undefined));
+    return 0;
+  }
+  const command = parsed.command;
+  const outputFormat = resolveOutputFormat(parsed.values);
+  if (!outputFormat.ok) {
+    stderr.write(`${outputFormat.message}\n`);
+    return 2;
+  }
+  if (command === 'manifest') {
+    writeManifest(stdout);
+    return 0;
+  }
+  const logLevelValue = parsed.values['log-level'];
+  if (
+    logLevelValue !== undefined &&
+    (typeof logLevelValue !== 'string' || !isLogLevel(logLevelValue))
+  ) {
+    stderr.write(`Invalid --log-level: ${String(logLevelValue)}\n`);
     return 2;
   }
   const environmentLogLevel = process.env['SUBZERODEV_LOG_LEVEL'];
@@ -136,41 +181,56 @@ export async function runCliAsync(argv: readonly string[]): Promise<number> {
     (environmentLogLevel !== undefined && isLogLevel(environmentLogLevel)
       ? environmentLogLevel
       : 'info');
-  const startedAt = new Date().toISOString();
+  const startedAt = now().toISOString();
   try {
-    const context = await createCommandContext({
-      configPath: values.config ?? 'github.config.json',
+    const context = await (runtime.createContext ?? createCommandContext)({
+      configPath:
+        typeof parsed.values['config'] === 'string'
+          ? parsed.values['config']
+          : 'github.config.json',
       logLevel,
-      quiet: values.quiet ?? false,
+      quiet: parsed.values['quiet'] === true,
     });
+    const loader = commandLoaders[command];
+    if (loader === undefined) throw new Error(`No command module is registered for ${command}.`);
     const module = await loader();
-    if (!isOperationalCommandModule(module)) return runCli(argv);
-    const result = await module.run(context);
+    if (!isOperationalCommandModule(module)) throw new Error(`Command ${command} cannot run.`);
+    const invocation: CommandInvocation = {
+      global: { outputFormat: outputFormat.value, dryRun: parsed.values['dry-run'] === true },
+      values: parsed.values,
+    };
+    const result = await module.run(context, invocation);
     const envelope = buildEnvelope({
       command,
       pluginVersion: readVersion(),
       startedAt,
-      finishedAt: new Date().toISOString(),
+      finishedAt: now().toISOString(),
       result,
     });
-    writeEnvelope(envelope, process.stdout);
+    writeResult(envelope, outputFormat.value, stdout);
     return envelope.exitCode;
   } catch (error: unknown) {
-    const details = error instanceof ConfigurationError ? error : null;
+    const details =
+      error instanceof ConfigurationError
+        ? { code: error.code, message: error.message }
+        : error instanceof PortfolioOverrideError
+          ? { code: 'config_portfolio_overrides_invalid', message: error.message }
+          : null;
+    const code = details?.code ?? 'command_execution_failed';
     const envelope = buildEnvelope({
       command,
       pluginVersion: readVersion(),
       startedAt,
-      finishedAt: new Date().toISOString(),
+      finishedAt: now().toISOString(),
       result: {
-        outcome: { kind: 'failed', exitCode: details?.code === 'token_missing' ? 5 : 2 },
+        outcome: failedOutcome(details === null ? 'operational' : failureClassForCode(code)),
         summary:
           details === null
             ? 'Command execution failed.'
             : 'Command configuration could not be loaded.',
         errors: [
           {
-            code: details?.code ?? 'command_execution_failed',
+            code,
             message:
               details?.message ??
               (error instanceof Error ? error.message : 'Command execution failed.'),
@@ -179,7 +239,7 @@ export async function runCliAsync(argv: readonly string[]): Promise<number> {
         ],
       },
     });
-    writeEnvelope(envelope, process.stdout);
+    writeResult(envelope, outputFormat.value, stdout);
     return envelope.exitCode;
   }
 }
@@ -191,12 +251,7 @@ function isOperationalCommandModule(value: unknown): value is OperationalCommand
 }
 
 export function isEntryPoint(moduleUrl: string, entryPoint: string | undefined): boolean {
-  if (!entryPoint) {
-    return false;
-  }
-
-  // npm installs the binary as a symlink in node_modules/.bin, and Node resolves
-  // import.meta.url to the real file, so the invoked path must be resolved too.
+  if (!entryPoint) return false;
   try {
     return moduleUrl === pathToFileURL(realpathSync(entryPoint)).href;
   } catch {

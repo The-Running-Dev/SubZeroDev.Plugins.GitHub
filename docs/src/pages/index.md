@@ -84,12 +84,9 @@ Build and run the local CLI. Positional arguments are passed to the CLI. Use
 ./run.ps1 -Mode Local -SkipInstall -CliArgument '--version'
 ```
 
-> **The five work commands are not implemented yet.** `sync`, `list`, `stats`,
-> `export`, and `validate` currently print a message and exit `3`, and `run.ps1`
-> surfaces that as a failed command. That is the scaffold reporting honestly, not
-> a broken install. `--help`, `--version`, and `manifest` work without a
-> configuration file, token, or network access. See the
-> [CLI reference](/docs/reference/cli).
+The CLI supports validation, incremental synchronization, cached listing and statistics, and
+deterministic JSON/YAML export. `manifest`, `--help`, and `--version` work without a configuration
+file, token, network, or writable mount.
 
 Build the Docker image and run the CLI:
 
@@ -106,35 +103,33 @@ $env:GITHUB_TOKEN = 'github_pat_replace_me'
 ./run.ps1 -Mode Docker -BuildImage sync
 ```
 
-This is the shape the command will take. `sync` exits `3` until Milestone 3.5 implements it. See
 [Running in Docker](/docs/guide/docker) for the mounts, the
 non-root user, and the direct `docker run` commands without the PowerShell wrapper.
 
 ## CLI
 
 ```bash
-subzerodev-github sync      # not implemented
-subzerodev-github list      # not implemented
-subzerodev-github stats     # not implemented
-subzerodev-github export    # not implemented
-subzerodev-github validate  # not implemented
-subzerodev-github manifest  # prints the canonical plugin manifest
+subzerodev-github validate
+subzerodev-github sync --profile standard
+subzerodev-github list --limit 100
+subzerodev-github stats --json
+subzerodev-github export --format json --format yaml
+subzerodev-github manifest
 ```
 
-Command behavior is implemented milestone by milestone. The current scaffold
-establishes the runner and a stable command surface; each command prints a
-message and exits `3` until its milestone lands.
+Global options are `--help`, `--version`, `--output-format <text|json>`, `--json`,
+`--config <path>`, `--log-level <level>`, `--quiet`, and `--dry-run`. Command options are
+`sync --profile <basic|standard|detailed> --no-cache --include-forks`, `list --limit <1-1000>`, and
+`export --format <json|yaml> --output <path>`. `--dry-run` previews sync and export without writes.
 
-Exit codes, required options, and the not-yet-implemented `manifest` command are documented once, in
+Exit codes and option details are documented once, in
 the [CLI reference](/docs/reference/cli) — the plugin contract
 is their canonical source, and this repository does not keep a second copy of that table.
 
 ## Status
 
-Milestone 0 is nearly complete: the package builds, the CLI carries the Phase One
-command names, and CI is configured to run its full suite on Windows and Linux. A
-successful Windows CI run is still pending. The commands intentionally return "not
-implemented" — no GitHub API, cache, or export behaviour exists yet.
+Milestones 0 through 7 are complete. The build plan tracks the remaining container, documentation,
+conformance, packaging, and release work in Milestone 8.
 
 [`BUILD-PLAN.md`](https://github.com/The-Running-Dev/SubZeroDev.Plugins.GitHub/blob/main/BUILD-PLAN.md)
 says what comes next and in what order.

@@ -44,6 +44,31 @@ git log -5 --oneline
 rg --files
 ```
 
+## Task effort and model selection
+
+Select the smallest model and lowest reasoning effort that can still produce production-quality
+output. Match capability to the decision complexity, not to the tool being used or the number of
+files involved. If a named model tier is unavailable, use the closest available tier that can meet
+the same quality bar.
+
+- **GPT-5.6 Sol — thinking.** Use for architecture, system and API design, specifications, technical
+  proposals, ambiguous root-cause analysis, multi-step planning, large-refactor design, security
+  analysis, performance strategy, and comparisons between materially different approaches. Default
+  to high reasoning effort; use a faster mode only when latency matters more than cost.
+- **GPT-5.6 Terra — building.** Use where the architecture and implementation contract are already
+  established: code, issue implementation, tests, refactors, bug fixes, APIs, UI, infrastructure,
+  Docker, CI/CD, Terraform, SQL, and implementation-coupled documentation. Use high effort for
+  significant features, difficult bugs, large pull requests, or complex refactors; use standard or
+  medium effort for small fixes, review comments, isolated functions, repetitive implementation,
+  and mechanical generation.
+- **GPT-5.6 Luna — processing.** Use for summaries, changelogs, commit messages, pull-request
+  descriptions, Markdown cleanup, formatting, issue triage, documentation polishing, code or log
+  explanation, notifications, email drafts, and release notes. Use its default reasoning level.
+
+Escalate instead of guessing. If a Luna task exposes implementation ambiguity, move it to Terra. If
+a Terra task exposes an unresolved architectural decision, stop implementation and move it to Sol.
+Reasoning budget is proportional to task complexity rather than task size.
+
 ## What is GitHub-specific and stays here
 
 Repository scope and filters; identity on GitHub's immutable numeric ID; capability-flag mapping to
@@ -301,6 +326,8 @@ assertion.
 
 - Work on a focused `agent/<description>` branch.
 - Keep commits scoped and stage only intended paths.
+- Stage intended paths explicitly; never use `git add -A` or `git add .` because either can absorb
+  unrelated worktree changes.
 - Open a draft pull request unless the user requests ready-for-review.
 - Do not reply to or resolve review threads without authorization.
 - Merge only after required application and documentation checks pass.

@@ -27,6 +27,7 @@ describe('configuration schema', () => {
       collection: { profile: 'standard' },
       directories: { cache: '.cache', output: 'output' },
       output: { formats: ['json', 'yaml'], retainRawResponses: false },
+      portfolio: { overrides: null },
       budget: {
         concurrency: 4,
         warnAtPercentConsumed: 50,

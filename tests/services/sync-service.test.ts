@@ -47,6 +47,27 @@ describe('incremental synchronization', () => {
     });
   });
 
+  it('computes a complete dry run without filesystem writes', async () => {
+    const fileSystem = memoryFileSystem();
+    const cache = new RepositoryCache(fileSystem, 'cache', () => 'run');
+    const result = await synchronizeRepositories({
+      provider: new FakeProvider([projectFixture({ id: '1' })]),
+      cache,
+      filter,
+      profile: 'standard',
+      concurrency: 2,
+      synchronizedAt: '2026-08-01T00:00:00Z',
+      dryRun: true,
+    });
+
+    expect(result).toMatchObject({
+      outcome: { kind: 'succeeded' },
+      data: { dryRun: true, cacheWritePerformed: false, changes: { added: 1 } },
+    });
+    expect(fileSystem.writes).toEqual([]);
+    expect(fileSystem.renames).toEqual([]);
+  });
+
   it('retains failed repositories byte-for-byte and exits partial', async () => {
     const cache = new RepositoryCache(memoryFileSystem(), 'cache', () => 'run');
     await sync(

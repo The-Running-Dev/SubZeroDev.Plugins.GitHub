@@ -4,7 +4,11 @@ import { describe, expect, it } from 'vitest';
 
 import { RepositoryCache } from '../../src/cache/store.js';
 import type { CachedProject } from '../../src/cache/reconcile.js';
-import { ExportError, exportCachedProjects } from '../../src/services/export-service.js';
+import {
+  ExportError,
+  exportCachedProjects,
+  previewCachedProjects,
+} from '../../src/services/export-service.js';
 import type { FileSystemPort } from '../../src/services/ports.js';
 import { memoryFileSystem } from '../support/fake-ports.js';
 import { projectFixture } from '../support/project-fixture.js';
@@ -98,6 +102,23 @@ describe('export service', () => {
         formats: ['json'],
       }),
     ).rejects.toThrow(/run sync first/);
+  });
+
+  it('previews every artifact without filesystem writes', async () => {
+    const fileSystem = memoryFileSystem();
+    const cache = new RepositoryCache(fileSystem, 'cache', () => 'cache-run');
+    await seed(cache, [cached('1')]);
+    const writesBefore = fileSystem.writes.length;
+    const renamesBefore = fileSystem.renames.length;
+
+    const result = await previewCachedProjects({
+      cache,
+      formats: ['json', 'yaml'],
+    });
+
+    expect(result.artifacts).toHaveLength(6);
+    expect(fileSystem.writes).toHaveLength(writesBefore);
+    expect(fileSystem.renames).toHaveLength(renamesBefore);
   });
 });
 

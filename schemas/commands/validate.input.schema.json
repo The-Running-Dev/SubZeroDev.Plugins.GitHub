@@ -1,0 +1,33 @@
+{
+  "$id": "https://plugins-github.subzerodev.com/schemas/commands/validate.input.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "config": {
+      "type": "string"
+    },
+    "dry-run": {
+      "type": "boolean"
+    },
+    "help": {
+      "type": "boolean"
+    },
+    "json": {
+      "type": "boolean"
+    },
+    "log-level": {
+      "type": "string"
+    },
+    "output-format": {
+      "type": "string"
+    },
+    "quiet": {
+      "type": "boolean"
+    },
+    "version": {
+      "type": "boolean"
+    }
+  },
+  "title": "validate command input",
+  "type": "object"
+}

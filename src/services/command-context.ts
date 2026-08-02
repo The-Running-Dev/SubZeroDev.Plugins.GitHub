@@ -6,14 +6,16 @@ import {
 } from '../configuration/index.js';
 import { createLogger, type LogLevel, type Logger } from '../logging/logger.js';
 import { createGitHubCommandProvider } from '../providers/github/command-provider.js';
-import type { GitHubProvider } from '../providers/github/github-provider.js';
+import type { RepositoryProvider } from '../providers/provider.js';
 
 import { nodeFileSystem } from './node-file-system.js';
+import type { FileSystemPort } from './ports.js';
 
 export interface CommandContext {
   readonly configuration: ResolvedConfiguration;
   readonly logger: Logger;
   readonly cache: RepositoryCache;
+  readonly fileSystem: FileSystemPort;
   createProvider(): Promise<ProviderContext>;
 }
 
@@ -21,7 +23,7 @@ export interface ProviderContext {
   readonly token: import('../configuration/environment.js').ResolvedToken;
   /** Credential-source diagnostics preserved for validate and the run report. */
   readonly tokenNotes: readonly string[];
-  readonly provider: GitHubProvider;
+  readonly provider: RepositoryProvider;
 }
 
 /** Builds the operational graph once; command modules only receive the completed context. */
@@ -38,6 +40,7 @@ export async function createCommandContext(input: {
   return {
     configuration,
     logger,
+    fileSystem: nodeFileSystem,
     cache: new RepositoryCache(nodeFileSystem, configuration.directories.cache),
     async createProvider(): Promise<ProviderContext> {
       return createGitHubCommandProvider({ configuration, logger, environment });

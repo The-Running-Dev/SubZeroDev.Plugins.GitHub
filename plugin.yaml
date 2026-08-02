@@ -7,21 +7,33 @@ license: MIT
 commands:
   - id: manifest
     description: Print the canonical plugin manifest.
+    inputSchema: schemas/commands/manifest.input.schema.json
+    outputSchema: schemas/contract/plugin-manifest.schema.json
     idempotency: idempotent
   - id: validate
     description: Validate configuration, credentials, and cache readiness.
+    inputSchema: schemas/commands/validate.input.schema.json
+    outputSchema: schemas/contract/result-envelope.schema.json
     idempotency: idempotent
   - id: sync
     description: Synchronize GitHub repository data.
+    inputSchema: schemas/commands/sync.input.schema.json
+    outputSchema: schemas/contract/result-envelope.schema.json
     idempotency: idempotent
   - id: list
     description: List repositories from the local cache.
+    inputSchema: schemas/commands/list.input.schema.json
+    outputSchema: schemas/contract/result-envelope.schema.json
     idempotency: idempotent
   - id: stats
     description: Display aggregate repository statistics.
+    inputSchema: schemas/commands/stats.input.schema.json
+    outputSchema: schemas/contract/result-envelope.schema.json
     idempotency: idempotent
   - id: export
     description: Export normalized project documents.
+    inputSchema: schemas/commands/export.input.schema.json
+    outputSchema: schemas/contract/result-envelope.schema.json
     idempotency: idempotent
     artifacts:
       - name: projects-json

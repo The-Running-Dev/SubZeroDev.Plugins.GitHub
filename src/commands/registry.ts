@@ -11,4 +11,6 @@ export const commandLoaders: Readonly<Partial<Record<CommandName, () => Promise<
     validate: async () => (await import('./validate.js')).default,
     sync: async () => (await import('./sync.js')).default,
     list: async () => (await import('./list.js')).default,
+    stats: async () => (await import('./stats.js')).default,
+    export: async () => (await import('./export.js')).default,
   };

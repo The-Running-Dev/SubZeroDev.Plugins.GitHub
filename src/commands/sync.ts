@@ -1,27 +1,61 @@
-import { synchronizeRepositories } from '../services/sync-service.js';
 import { RawResponseStore } from '../cache/raw-store.js';
-import { nodeFileSystem } from '../services/node-file-system.js';
+import { SYNC_OPTIONS } from '../models/command-options.js';
+import { loadPortfolioOverrides } from '../services/portfolio-service.js';
+import { synchronizeRepositories } from '../services/sync-service.js';
 
+import { failedOutcome } from './outcome.js';
 import type { OperationalCommandModule } from './types.js';
 
 export const syncCommand: OperationalCommandModule = {
   name: 'sync',
-  options: {},
+  options: SYNC_OPTIONS,
   requiresContext: true,
   sideEffecting: true,
-  async run(context) {
+  async run(context, invocation) {
+    const profileValue = invocation.values['profile'];
+    if (
+      profileValue !== undefined &&
+      profileValue !== 'basic' &&
+      profileValue !== 'standard' &&
+      profileValue !== 'detailed'
+    ) {
+      return {
+        outcome: failedOutcome('usage'),
+        summary: 'Collection profile is invalid.',
+        errors: [
+          {
+            code: 'invalid_collection_profile',
+            message: '--profile must be basic, standard, or detailed.',
+            retryable: false,
+          },
+        ],
+      };
+    }
     const providerContext = await context.createProvider();
+    const portfolioOverrides = await loadPortfolioOverrides(
+      context.fileSystem,
+      context.configuration.portfolio.overrides,
+    );
     const result = await synchronizeRepositories({
       provider: providerContext.provider,
       cache: context.cache,
-      filter: context.configuration.repositories,
-      profile: context.configuration.collection.profile,
+      filter: {
+        ...context.configuration.repositories,
+        includeForks:
+          invocation.values['include-forks'] === true
+            ? true
+            : context.configuration.repositories.includeForks,
+      },
+      profile: profileValue ?? context.configuration.collection.profile,
       concurrency: context.configuration.budget.concurrency,
       synchronizedAt: new Date().toISOString(),
-      ...(context.configuration.output.retainRawResponses
+      dryRun: invocation.global.dryRun,
+      useCache: invocation.values['no-cache'] !== true,
+      portfolioOverrides,
+      ...(context.configuration.output.retainRawResponses && !invocation.global.dryRun
         ? {
             rawStore: new RawResponseStore(
-              nodeFileSystem,
+              context.fileSystem,
               context.configuration.directories.output,
             ),
           }
@@ -36,5 +70,7 @@ export const syncCommand: OperationalCommandModule = {
     };
   },
 };
+
+export { SYNC_OPTIONS };
 
 export default syncCommand;

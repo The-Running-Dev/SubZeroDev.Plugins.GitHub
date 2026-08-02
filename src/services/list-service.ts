@@ -1,10 +1,13 @@
 import { CacheError, RepositoryCache } from '../cache/store.js';
 import type { CommandResult } from '../output/envelope.js';
-
-const MAXIMUM_LISTED_REPOSITORIES = 100;
+import { applyPortfolioOverrides, type PortfolioOverrides } from './portfolio-service.js';
 
 /** Reads only the local cache; it intentionally never constructs a provider or resolves a token. */
-export async function listCachedRepositories(cache: RepositoryCache): Promise<CommandResult> {
+export async function listCachedRepositories(
+  cache: RepositoryCache,
+  limit = 100,
+  overrides: PortfolioOverrides = new Map(),
+): Promise<CommandResult> {
   let cached;
   try {
     cached = await cache.read();
@@ -32,19 +35,25 @@ export async function listCachedRepositories(cache: RepositoryCache): Promise<Co
     };
   }
 
-  const repositories = cached.repositories.slice(0, MAXIMUM_LISTED_REPOSITORIES);
-  const wasTruncated = repositories.length !== cached.repositories.length;
+  const projects = applyPortfolioOverrides(
+    cached.projects.map(({ project }) => project),
+    overrides,
+  );
+  const repositories = projects.slice(0, limit);
+  const wasTruncated = repositories.length !== projects.length;
   return {
     outcome: { kind: 'succeeded' },
     summary: `Listed ${String(cached.repositories.length)} cached repositories.`,
     data: {
       synchronizedAt: cached.synchronizedAt,
-      totalRepositories: cached.repositories.length,
-      repositories: repositories.map((repository) => ({
-        id: repository.identity.providerId,
-        slug: repository.slug,
-        visibility: repository.visibility,
-        status: repository.status,
+      totalRepositories: projects.length,
+      repositories: repositories.map((project) => ({
+        id: project.repository.identity.providerId,
+        slug: project.repository.slug,
+        visibility: project.repository.visibility,
+        status: project.repository.status,
+        displayName: project.portfolio.displayName,
+        hidden: project.portfolio.hidden,
       })),
     },
     ...(wasTruncated
@@ -52,7 +61,7 @@ export async function listCachedRepositories(cache: RepositoryCache): Promise<Co
           warnings: [
             {
               code: 'list_truncated',
-              message: `Listed the first ${String(MAXIMUM_LISTED_REPOSITORIES)} repositories; ${String(cached.repositories.length)} are cached.`,
+              message: `Listed the first ${String(limit)} repositories; ${String(projects.length)} are cached.`,
             },
           ],
         }

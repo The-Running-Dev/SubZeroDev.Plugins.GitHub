@@ -1,10 +1,11 @@
 import { validateProvider } from '../services/validation-service.js';
+import { VALIDATE_OPTIONS } from '../models/command-options.js';
 
 import type { OperationalCommandModule } from './types.js';
 
 export const validateCommand: OperationalCommandModule = {
   name: 'validate',
-  options: {},
+  options: VALIDATE_OPTIONS,
   requiresContext: true,
   sideEffecting: false,
   async run(context) {
@@ -19,5 +20,7 @@ export const validateCommand: OperationalCommandModule = {
     };
   },
 };
+
+export { VALIDATE_OPTIONS };
 
 export default validateCommand;

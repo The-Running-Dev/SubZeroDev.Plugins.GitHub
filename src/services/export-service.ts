@@ -10,6 +10,7 @@ import {
 } from '../serialization/documents.js';
 import { sha256 } from '../serialization/digest.js';
 import type { FileSystemPort } from './ports.js';
+import { applyPortfolioOverrides, type PortfolioOverrides } from './portfolio-service.js';
 import { buildSyncReport } from './sync-report.js';
 
 export class ExportError extends Error {
@@ -25,6 +26,38 @@ export async function exportCachedProjects(input: {
   readonly outputDirectory: string;
   readonly formats: readonly OutputFormat[];
   readonly runId?: () => string;
+  readonly portfolioOverrides?: PortfolioOverrides;
+}): Promise<{
+  readonly documents: OutputDocumentSet;
+  readonly artifacts: readonly ArtifactReference[];
+}> {
+  const prepared = await previewCachedProjects({
+    cache: input.cache,
+    formats: input.formats,
+    ...(input.portfolioOverrides === undefined
+      ? {}
+      : { portfolioOverrides: input.portfolioOverrides }),
+  });
+  const files = outputFiles(prepared.documents);
+  const staging = new StagingArea(
+    input.fileSystem,
+    input.outputDirectory,
+    (input.runId ?? randomUUID)(),
+  );
+  try {
+    for (const file of files) await staging.stage(file.path, file.contents);
+    await staging.commit();
+  } catch (error: unknown) {
+    await staging.discard();
+    throw new ExportError(error instanceof Error ? error.message : 'Could not publish exports.');
+  }
+  return prepared;
+}
+
+export async function previewCachedProjects(input: {
+  readonly cache: RepositoryCache;
+  readonly formats: readonly OutputFormat[];
+  readonly portfolioOverrides?: PortfolioOverrides;
 }): Promise<{
   readonly documents: OutputDocumentSet;
   readonly artifacts: readonly ArtifactReference[];
@@ -40,23 +73,14 @@ export async function exportCachedProjects(input: {
     throw new ExportError('No synchronized cache is available; run sync first.');
 
   const documents = buildOutputDocuments({
-    projects: snapshot.projects.map(({ project }) => project),
+    projects: applyPortfolioOverrides(
+      snapshot.projects.map(({ project }) => project),
+      input.portfolioOverrides ?? new Map(),
+    ),
     report: buildSyncReport(snapshot.projects),
     formats: input.formats,
   });
   const files = outputFiles(documents);
-  const staging = new StagingArea(
-    input.fileSystem,
-    input.outputDirectory,
-    (input.runId ?? randomUUID)(),
-  );
-  try {
-    for (const file of files) await staging.stage(file.path, file.contents);
-    await staging.commit();
-  } catch (error: unknown) {
-    await staging.discard();
-    throw new ExportError(error instanceof Error ? error.message : 'Could not publish exports.');
-  }
   return {
     documents,
     artifacts: files.map((file) => ({
