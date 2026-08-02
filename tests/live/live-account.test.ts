@@ -50,6 +50,8 @@ describe.skipIf(!liveEnabled)('live GitHub account', () => {
       provider: providerContext.provider,
       cache: context.cache,
       filter: context.configuration.repositories,
+      profile: context.configuration.collection.profile,
+      concurrency: context.configuration.budget.concurrency,
       synchronizedAt: new Date().toISOString(),
     });
     expect(sync.outcome.kind).toBe('succeeded');

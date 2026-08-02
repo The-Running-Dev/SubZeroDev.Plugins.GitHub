@@ -11,6 +11,7 @@ export type CommandOutcome =
 export interface Diagnostic {
   readonly code: string;
   readonly message: string;
+  readonly subject?: string;
   readonly path?: readonly (string | number)[];
 }
 

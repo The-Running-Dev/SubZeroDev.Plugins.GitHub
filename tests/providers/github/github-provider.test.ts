@@ -395,6 +395,40 @@ describe('GitHubProvider collection', () => {
     expect(client.usage()).toMatchObject({ primaryRequests: 6, searchRequests: 0 });
   });
 
+  it('reuses normalized cached values on 304 responses at strictly lower core cost', async () => {
+    const stub = conditionalCollectionStub();
+    const client = provider(stub.fetch);
+    const discoveredResults: Outcome<DiscoveredRepository, ProviderError>[] = [];
+    for await (const result of client.discover(everything)) discoveredResults.push(result);
+    const [discovered] = discoveredResults;
+    if (discovered?.ok !== true) throw new Error('expected a discovered repository');
+
+    const first = await client.collect(discovered.value, 'standard', { etags: {} });
+    if (!first.ok) throw new Error('expected the first collection to succeed');
+    const firstCost = client.usage().primaryRequests;
+    const etags = Object.fromEntries(
+      first.value.resources.flatMap((resource) =>
+        resource.etag === null ? [] : [[resource.key, resource.etag]],
+      ),
+    );
+    const second = await client.collect(discovered.value, 'standard', {
+      etags,
+      previous: first.value,
+    });
+    if (!second.ok) throw new Error('expected the second collection to succeed');
+    const secondCost = client.usage().primaryRequests - firstCost;
+
+    expect(second.value.technology).toEqual(first.value.technology);
+    expect(second.value.branches).toEqual(first.value.branches);
+    expect(second.value.tags).toEqual(first.value.tags);
+    expect(second.value.releases).toEqual(first.value.releases);
+    expect(second.value.diagnostics).toEqual([]);
+    expect(secondCost).toBeLessThan(firstCost);
+    expect(client.usage().notModifiedResponses).toBe(4);
+    expect(
+      stub.requests.filter((request) => request.headers['if-none-match'] !== undefined),
+    ).toHaveLength(4);
+  });
   it('collects detailed counts, marks the contributor cap, and matches the worst-case budget', async () => {
     const stub = collectionStub(true);
     const client = provider(stub.fetch);
@@ -437,7 +471,6 @@ describe('GitHubProvider collection', () => {
       expect(result.value.contributors).toMatchObject({ total: 500, truncated: false });
     }
   });
-
   it('keeps an empty commit count null and attaches a diagnostic', async () => {
     const stub = collectionStub(false, true);
     const client = provider(stub.fetch);
@@ -593,6 +626,43 @@ function collectionStub(
   ]);
 }
 
+function conditionalCollectionStub(): FetchStub {
+  const conditional = (body: unknown, etag: string) => (_request: unknown, callIndex: number) =>
+    callIndex === 0 ? { status: 200, headers: { etag }, body } : { status: 304, headers: { etag } };
+  return createFetchStub([
+    {
+      method: 'GET',
+      pathPattern: /^\/user\/repos\?/,
+      respond: () => ({
+        status: 200,
+        body: [repositoryPayload({ id: 1, name: 'one', full_name: 'octo/one' })],
+      }),
+    },
+    {
+      method: 'GET',
+      pathPattern: /^\/repos\/octo\/one\/languages$/,
+      respond: conditional({ TypeScript: 2 }, '"languages-v1"'),
+    },
+    {
+      method: 'GET',
+      pathPattern: /^\/repos\/octo\/one\/releases\?/,
+      respond: conditional([], '"releases-v1"'),
+    },
+    {
+      method: 'GET',
+      pathPattern: /^\/repos\/octo\/one\/branches\?/,
+      respond: conditional(
+        [{ name: 'main', protected: true, commit: { sha: 'abc123' } }],
+        '"branches-v1"',
+      ),
+    },
+    {
+      method: 'GET',
+      pathPattern: /^\/repos\/octo\/one\/tags\?/,
+      respond: conditional([], '"tags-v1"'),
+    },
+  ]);
+}
 describe('GitHubProvider usage', () => {
   it('reports one primary request per page and nothing else', async () => {
     const stub = repositoryPages(101);

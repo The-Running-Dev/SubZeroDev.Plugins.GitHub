@@ -130,11 +130,16 @@ export class GitHubProvider implements RepositoryProvider {
       collectBranches(context),
       collectTags(context),
     ]);
+    const previous = conditions.previous ?? null;
+    const languageValue = reuseNotModified(languages, previous?.technology.languages ?? null);
+    const releaseValue = reuseNotModified(releases, previous?.releases ?? null);
+    const branchValue = reuseNotModified(branches, previous?.branches ?? null);
+    const tagValue = reuseNotModified(tags, previous?.tags ?? null);
     diagnostics.push(
-      ...languages.diagnostics,
-      ...releases.diagnostics,
-      ...branches.diagnostics,
-      ...tags.diagnostics,
+      ...withoutNotModifiedDiagnostic(languages.diagnostics, languageValue.reused),
+      ...withoutNotModifiedDiagnostic(releases.diagnostics, releaseValue.reused),
+      ...withoutNotModifiedDiagnostic(branches.diagnostics, branchValue.reused),
+      ...withoutNotModifiedDiagnostic(tags.diagnostics, tagValue.reused),
     );
 
     let commits: number | null = null;
@@ -158,15 +163,17 @@ export class GitHubProvider implements RepositoryProvider {
         }),
         collectIssueAndPullRequestCounts(context, metadata.reportedOpenIssuesAndPullRequests),
       ]);
-      contributors = contributorResult.value ?? contributors;
-      commits = commitResult.value;
+      const contributorValue = reuseNotModified(contributorResult, previous?.contributors ?? null);
+      const commitValue = reuseNotModified(commitResult, previous?.statistics.commits ?? null);
+      contributors = contributorValue.value ?? contributors;
+      commits = commitValue.value;
       if (issueResult.value !== null) {
         issues = issueResult.value.issues;
         pullRequests = issueResult.value.pullRequests;
       }
       diagnostics.push(
-        ...contributorResult.diagnostics,
-        ...commitResult.diagnostics,
+        ...withoutNotModifiedDiagnostic(contributorResult.diagnostics, contributorValue.reused),
+        ...withoutNotModifiedDiagnostic(commitResult.diagnostics, commitValue.reused),
         ...issueResult.diagnostics,
       );
     }
@@ -177,7 +184,7 @@ export class GitHubProvider implements RepositoryProvider {
         repository: target.repository,
         technology: {
           primaryLanguage: target.repository.primaryLanguage,
-          languages: [...(languages.value ?? [])],
+          languages: [...(languageValue.value ?? [])],
         },
         statistics: {
           sizeKilobytes: metadata.sizeKilobytes,
@@ -188,11 +195,12 @@ export class GitHubProvider implements RepositoryProvider {
           issues,
           pullRequests,
         },
-        branches: branches.value ?? { total: null, branches: [] },
-        tags: tags.value ?? { total: null, latest: null },
-        releases: releases.value ?? { total: null, latest: null },
+        branches: branchValue.value ?? { total: null, branches: [] },
+        tags: tagValue.value ?? { total: null, latest: null },
+        releases: releaseValue.value ?? { total: null, latest: null },
         contributors,
         diagnostics,
+        resources: this.client.requester.observationsForSubject(target.repository.slug),
       },
     };
   }
@@ -224,9 +232,30 @@ function baseCollection(
     releases: { total: null, latest: null },
     contributors: { total: null, truncated: false, contributors: [] },
     diagnostics: [...diagnostics],
+    resources: [],
   };
 }
 
+function reuseNotModified<T>(
+  result: { readonly value: T | null; readonly diagnostics: readonly Diagnostic[] },
+  previous: T | null,
+): { readonly value: T | null; readonly reused: boolean } {
+  const notModified = result.diagnostics.some(
+    (diagnostic) => diagnostic.code === 'github_not_modified_without_cache',
+  );
+  return notModified && previous !== null
+    ? { value: previous, reused: true }
+    : { value: result.value, reused: false };
+}
+
+function withoutNotModifiedDiagnostic(
+  diagnostics: readonly Diagnostic[],
+  reused: boolean,
+): readonly Diagnostic[] {
+  return reused
+    ? diagnostics.filter((diagnostic) => diagnostic.code !== 'github_not_modified_without_cache')
+    : diagnostics;
+}
 function coreDiagnostics(target: DiscoveredRepository, metadata: GitHubCoreMetadata): Diagnostic[] {
   return Object.entries(metadata)
     .filter(([name, value]) => name !== 'reportedOpenIssuesAndPullRequests' && value === null)
