@@ -198,7 +198,6 @@ export class GitHubRequester {
   }
 
   private async once<T>(spec: RequestSpec, parse: (value: unknown) => T): Promise<Attempt<T>> {
-    if (spec.bucket === 'search') await this.searchPacer.wait();
     const decision = this.options.rateLimits.decide(spec.bucket);
     if (decision.kind === 'stop') {
       return {
@@ -219,6 +218,7 @@ export class GitHubRequester {
         bucket: spec.bucket,
         percentConsumed: decision.percentConsumed,
       });
+    if (spec.bucket === 'search') await this.searchPacer.wait();
 
     const headers = new Headers({
       accept: 'application/vnd.github+json',
