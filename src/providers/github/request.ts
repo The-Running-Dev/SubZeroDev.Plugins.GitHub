@@ -1,4 +1,5 @@
 import type { Logger } from '../../logging/logger.js';
+import { compareCodeUnits } from '../../models/primitives.js';
 import type { Clock, Sleeper } from '../../services/ports.js';
 import type { Outcome, ProviderError, ProviderErrorKind } from '../outcome.js';
 import type { ResourceObservation } from '../provider.js';
@@ -149,7 +150,7 @@ export class GitHubRequester {
     return [...this.observations.values()]
       .filter((observation) => observation.subject === subject)
       .map(({ key, etag, fetchedAt }) => ({ key, etag, fetchedAt }))
-      .sort((left, right) => (left.key < right.key ? -1 : left.key > right.key ? 1 : 0));
+      .sort((left, right) => compareCodeUnits(left.key, right.key));
   }
 
   /** Returns the whole `Attempt`, so the settle loop above can honour `Retry-After` too. */
