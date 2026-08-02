@@ -1,5 +1,7 @@
-import type { Logger } from '../../logging/logger.js';
 import { createHash } from 'node:crypto';
+
+import type { Logger } from '../../logging/logger.js';
+import { compareCodeUnits } from '../../models/primitives.js';
 import type { Clock, Sleeper } from '../../services/ports.js';
 import type { Outcome, ProviderError, ProviderErrorKind } from '../outcome.js';
 import type { ProviderRawResponse, ResourceObservation } from '../provider.js';
@@ -67,6 +69,7 @@ export interface GitHubRequesterOptions {
   readonly random?: () => number;
   readonly transientRetry?: TransientRetryPolicy;
   readonly searchRequestsPerMinute?: number;
+  readonly retainRawResponses?: boolean;
 }
 
 /** `once` also reports what the response asked us to wait; the retry decision is not its job. */
@@ -151,13 +154,11 @@ export class GitHubRequester {
     return [...this.observations.values()]
       .filter((observation) => observation.subject === subject)
       .map(({ key, etag, fetchedAt }) => ({ key, etag, fetchedAt }))
-      .sort((left, right) => (left.key < right.key ? -1 : left.key > right.key ? 1 : 0));
+      .sort((left, right) => compareCodeUnits(left.key, right.key));
   }
 
   public rawResponses(): readonly ProviderRawResponse[] {
-    return [...this.raw.values()].sort((left, right) =>
-      left.name < right.name ? -1 : left.name > right.name ? 1 : 0,
-    );
+    return [...this.raw.values()].sort((left, right) => compareCodeUnits(left.name, right.name));
   }
 
   /** Returns the whole `Attempt`, so the settle loop above can honour `Retry-After` too. */
@@ -218,7 +219,6 @@ export class GitHubRequester {
   }
 
   private async once<T>(spec: RequestSpec, parse: (value: unknown) => T): Promise<Attempt<T>> {
-    if (spec.bucket === 'search') await this.searchPacer.wait();
     const decision = this.options.rateLimits.decide(spec.bucket);
     if (decision.kind === 'stop') {
       return {
@@ -239,6 +239,7 @@ export class GitHubRequester {
         bucket: spec.bucket,
         percentConsumed: decision.percentConsumed,
       });
+    if (spec.bucket === 'search') await this.searchPacer.wait();
 
     const headers = new Headers({
       accept: 'application/vnd.github+json',
@@ -329,7 +330,7 @@ export class GitHubRequester {
       };
 
     // An upstream echo must never turn credential retention into a debugging feature.
-    if (!text.includes(this.options.token)) {
+    if (this.options.retainRawResponses === true && !text.includes(this.options.token)) {
       const name = rawResponseName(spec);
       this.raw.set(name, { name, contents: text });
     }

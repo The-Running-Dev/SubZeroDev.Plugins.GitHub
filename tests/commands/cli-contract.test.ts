@@ -24,6 +24,16 @@ describe('CLI contract', () => {
     }
   });
 
+  it('reports the invalid output format value instead of an alias conflict', () => {
+    const stderr = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+    try {
+      expect(runCli(['sync', '--output-format', 'xml'])).toBe(2);
+      expect(stderr).toHaveBeenCalledWith('Invalid --output-format: xml. Expected text or json.\n');
+    } finally {
+      stderr.mockRestore();
+    }
+  });
+
   it('generates help from every global and command option table', () => {
     const globalHelp = buildHelp();
     for (const option of Object.keys(GLOBAL_OPTIONS)) expect(globalHelp).toContain(`--${option}`);

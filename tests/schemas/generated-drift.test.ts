@@ -9,9 +9,9 @@ import type { FormatsPlugin } from 'ajv-formats';
 import { stringifyCanonical } from '../../src/serialization/canonical-json.js';
 import { buildProjectsJsonSchema } from '../../src/serialization/json-schema.js';
 import { buildOutputDocuments } from '../../src/serialization/documents.js';
-import { fixtureInput } from '../serialization/documents.test.js';
 import { buildCommandInputSchema } from '../../src/serialization/command-schema.js';
 import { COMMAND_NAMES } from '../../src/commands/types.js';
+import { fixtureInput } from '../serialization/documents.test.js';
 
 const require = createRequire(import.meta.url);
 const Ajv2020 = loadDefault('ajv/dist/2020.js') as typeof Ajv2020Class;

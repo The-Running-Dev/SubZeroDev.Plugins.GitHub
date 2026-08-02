@@ -7,6 +7,7 @@ import { compareCodeUnits } from '../models/primitives.js';
 import { canonicalJson } from '../serialization/canonical-json.js';
 import { confinedPath } from '../serialization/path-confinement.js';
 import { StagingArea } from '../serialization/atomic-write.js';
+import { mapConcurrent } from '../services/concurrency.js';
 import type { FileSystemPort } from '../services/ports.js';
 import { contentHash, documentHash } from './content-hash.js';
 import {
@@ -18,6 +19,8 @@ import {
 import type { CachedProject } from './reconcile.js';
 import { manifestIntegrityIssue, projectIntegrityIssue } from './integrity.js';
 import { reclaimStagingDirectories, reclaimUnreferencedRepositoryDocuments } from './reclaim.js';
+
+const CACHE_READ_CONCURRENCY = 4;
 
 export interface CacheOwner {
   readonly provider: string;
@@ -62,24 +65,31 @@ export class RepositoryCache {
     this.directory = resolve(directory);
   }
 
-  public async read(options: { readonly reclaim?: boolean } = {}): Promise<CacheSnapshot | null> {
-    if (options.reclaim !== false) {
-      await reclaimStagingDirectories(this.fileSystem, this.directory);
-    }
+  public async read(): Promise<CacheSnapshot | null> {
     const manifest = await this.readManifest();
     if (manifest === null) return null;
     const manifestIssue = manifestIntegrityIssue(manifest);
     if (manifestIssue !== null) throw new CacheError(manifestIssue);
 
-    const projects: CachedProject[] = [];
-    for (const entry of manifest.repositories) {
-      const project = await this.readProject(entry);
-      projects.push({
-        project,
+    const loaded = await mapConcurrent(
+      manifest.repositories,
+      async (entry): Promise<CachedProject> => ({
+        project: await this.readProject(entry),
         resources: entry.resources,
         diagnostics: entry.diagnostics,
         partial: entry.partial,
-      });
+      }),
+      { limit: CACHE_READ_CONCURRENCY },
+    );
+    const projects: CachedProject[] = [];
+    for (const result of loaded.results) {
+      // Results remain index-aligned, so throwing the first rejection here is
+      // deterministic even when a later read happens to fail sooner.
+      if (result.status === 'rejected') throw result.reason;
+      if (result.status !== 'fulfilled') {
+        throw new CacheError('Cache read stopped before every repository document was loaded.');
+      }
+      projects.push(result.value);
     }
     projects.sort(compareCachedProjects);
     return {

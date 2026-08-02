@@ -22,6 +22,7 @@ export async function collectContributors(
 ): Promise<CollectorResult<ContributorSummary>> {
   const resource: ResourceKey = `repository-contributors:${context.target.repository.identity.providerId}`;
   const contributors = new Map<string, z.infer<typeof contributorSchema>>();
+  let completed = false;
   let reportedLastPage: number | null = null;
 
   for (let page = 1; page <= MAXIMUM_PAGES; page += 1) {
@@ -55,8 +56,14 @@ export async function collectContributors(
 
     reportedLastPage = response.value.linkLastPage ?? reportedLastPage;
     for (const contributor of response.value.data) contributors.set(contributor.login, contributor);
-    if (response.value.data.length < PAGE_SIZE) break;
-    if (reportedLastPage !== null && page >= reportedLastPage) break;
+    if (response.value.data.length < PAGE_SIZE) {
+      completed = true;
+      break;
+    }
+    if (reportedLastPage !== null && page >= reportedLastPage) {
+      completed = true;
+      break;
+    }
   }
 
   const values = [...contributors.values()].sort((left, right) =>
@@ -66,8 +73,8 @@ export async function collectContributors(
     contributorSummarySchema.parse({
       total: values.length,
       truncated:
-        values.length >= MAXIMUM_PAGES * PAGE_SIZE ||
-        (reportedLastPage !== null && reportedLastPage > MAXIMUM_PAGES),
+        (reportedLastPage !== null && reportedLastPage > MAXIMUM_PAGES) ||
+        (!completed && values.length >= MAXIMUM_PAGES * PAGE_SIZE),
       contributors: values.map((contributor) => ({
         login: contributor.login,
         contributions: contributor.contributions,

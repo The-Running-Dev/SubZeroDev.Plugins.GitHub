@@ -21,7 +21,7 @@ describe('container release surface', () => {
 
   it('keeps the seeded read-only export fixture valid', async () => {
     const cache = new RepositoryCache(nodeFileSystem, resolve('tests/fixtures/cache/seeded'));
-    await expect(cache.read({ reclaim: false })).resolves.toMatchObject({
+    await expect(cache.read()).resolves.toMatchObject({
       owner: { providerId: '99' },
       projects: [{ project: { repository: { identity: { providerId: '1' } } } }],
     });

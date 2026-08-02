@@ -53,6 +53,23 @@ describe('CLI end-to-end service graph', () => {
     expect(result.envelope.errors).not.toHaveLength(0);
   });
 
+  it('reports unreadable portfolio overrides as invalid configuration', async () => {
+    const context = makeContext(
+      memoryFileSystem(),
+      new FixtureProvider([]),
+      'missing-overrides.json',
+    );
+    const result = await execute('list', context);
+    expect(result).toMatchObject({
+      code: 2,
+      envelope: {
+        status: 'failed',
+        exitCode: 2,
+        errors: [{ code: 'config_portfolio_overrides_invalid' }],
+      },
+    });
+  });
+
   it('reports authentication failure as exit 5', async () => {
     const provider = new FixtureProvider(
       [],
@@ -147,9 +164,16 @@ async function execute(
   return { code, envelope: JSON.parse(output) as ResultEnvelope };
 }
 
-function makeContext(fileSystem: FileSystemPort, provider: RepositoryProvider): CommandContext {
+function makeContext(
+  fileSystem: FileSystemPort,
+  provider: RepositoryProvider,
+  portfolioOverrides: string | null = null,
+): CommandContext {
   const configuration = resolveConfiguration(
-    configurationSchema.parse({ configVersion: '1.0.0' }),
+    configurationSchema.parse({
+      configVersion: '1.0.0',
+      portfolio: { overrides: portfolioOverrides },
+    }),
     resolve('fixture-root'),
   );
   return {

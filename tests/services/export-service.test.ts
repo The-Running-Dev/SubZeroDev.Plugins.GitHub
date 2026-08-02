@@ -114,7 +114,6 @@ describe('export service', () => {
     const result = await previewCachedProjects({
       cache,
       formats: ['json', 'yaml'],
-      reclaim: false,
     });
 
     expect(result.artifacts).toHaveLength(6);

@@ -29,7 +29,7 @@ export async function synchronizeRepositories(input: {
   let previous: Awaited<ReturnType<RepositoryCache['read']>>;
   const cacheWarnings: Diagnostic[] = [];
   try {
-    previous = input.useCache === false ? null : await input.cache.read({ reclaim: !input.dryRun });
+    previous = input.useCache === false ? null : await input.cache.read();
   } catch (error: unknown) {
     if (error instanceof CacheVersionError) {
       return failed(
@@ -181,7 +181,7 @@ export async function synchronizeRepositories(input: {
       projects: next,
     });
   }
-  if (input.rawStore !== undefined && input.provider.rawResponses !== undefined) {
+  if (!input.dryRun && input.rawStore !== undefined && input.provider.rawResponses !== undefined) {
     try {
       await input.rawStore.write(input.provider.rawResponses());
     } catch (error: unknown) {

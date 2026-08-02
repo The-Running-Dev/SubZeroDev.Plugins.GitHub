@@ -1,4 +1,4 @@
-import { dirname, isAbsolute, relative, resolve } from 'node:path';
+import { dirname, isAbsolute, relative, resolve, sep } from 'node:path';
 
 import type { FileSystemPort } from '../services/ports.js';
 
@@ -44,5 +44,8 @@ export async function confinedRealPath(
 
 function isWithin(root: string, candidate: string): boolean {
   const fromRoot = relative(root, candidate);
-  return fromRoot === '' || (!fromRoot.startsWith('..') && !isAbsolute(fromRoot));
+  return (
+    fromRoot === '' ||
+    (fromRoot !== '..' && !fromRoot.startsWith(`..${sep}`) && !isAbsolute(fromRoot))
+  );
 }
