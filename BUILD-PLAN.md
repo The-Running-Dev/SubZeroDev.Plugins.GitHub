@@ -146,14 +146,16 @@ tests exercise that shape rather than maintaining a second handwritten source.
 and against a page that repeats an entry; a `202` never reaches a caller as data or as `ok`; errors
 carry context without secrets.
 
-## Milestone 3.5 — First runnable slice
+## Milestone 3.5 — First runnable slice — **complete**
 
 **The de-risking step.** Everything after this is built against real payloads.
 
-- [ ] `validate`, plus a discovery-and-core-metadata `sync`, plus enough `list` to read the cache
-- [ ] Run `validate → sync → list` against one real account
-- [ ] Compare observed request counts against the budget; correct the budget if reality disagrees
-- [ ] Fold every mapping correction back into the Milestone 1 fixtures
+- [x] `validate`, plus a discovery-and-core-metadata `sync`, plus enough `list` to read the cache
+- [x] Run `validate → sync → list` against one real account: 67 public repositories on 2026-08-01
+- [x] Compare observed request counts against the budget: one core request, matching the discovery
+      budget; zero search requests and zero retries
+- [x] Fold every mapping correction back into the Milestone 1 fixtures; the live run required no
+      corrections
 
 ## Milestone 4 — Metadata and statistics
 
