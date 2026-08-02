@@ -53,7 +53,9 @@ deliberate departures from that, both de-risking:
 - [x] Matrix check suite observed green on both Windows and Linux
 - [x] CLI exit codes defined, `1` reserved for uncaught exceptions
 
-## Milestone 1 — Domain contracts and canonical schemas — **not complete**
+## Milestone 1 — Domain contracts and canonical schemas — **implementation complete; generated
+
+schema sequenced to Milestone 6**
 
 - [x] Versioned `Project`, `Repository`, `LanguageStatistics`, `Release`, `ReleaseAsset`, `Branch`,
       `Contributor`, `RepositoryStatistics`, `Summary`, and the top-level documents
@@ -63,8 +65,9 @@ deliberate departures from that, both de-risking:
 - [x] Zod schemas as the source of truth, preferring `null` over `.optional()` for serialized fields
 - [x] One total order, `compareIdentity`, over UTF-16 code units — never `localeCompare`, whose answer
       varies with the environment's locale
-- [ ] **Fixtures: minimum, complete, private, archived, fork, template, Unicode.** `tests/fixtures/projects/`
-      does not exist, so the round-trip and invalid-fixture exit criteria below are unproven
+- [x] Fixtures: minimum, complete, private, archived, fork, template, and Unicode, plus invalid
+      fixtures proving paths for versions, timestamps, URLs, percentages, duplicate identities, and
+      numeric provider IDs
 - [ ] `projects.schema.json` generated with `z.toJSONSchema()` — do not add `zod-to-json-schema`,
       which targets Zod 3. **Sequenced to Milestone 6** (`IMPLEMENTATION-PLAN.md` §8), which owns the
       generator and the drift test; it is listed here only because the schemas it generates from are

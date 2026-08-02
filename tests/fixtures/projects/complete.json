@@ -1,0 +1,112 @@
+{
+  "schemaVersion": "1.0.0",
+  "repository": {
+    "identity": { "provider": "github", "providerId": "2" },
+    "owner": "the-running-dev",
+    "name": "complete",
+    "slug": "the-running-dev/complete",
+    "description": "Every currently modeled field is populated.",
+    "visibility": "public",
+    "status": "active",
+    "isFork": false,
+    "isDisabled": false,
+    "isTemplate": false,
+    "createdAt": "2024-01-02T03:04:05Z",
+    "updatedAt": "2026-06-07T08:09:10.123Z",
+    "pushedAt": "2026-06-07T08:09:10Z",
+    "defaultBranch": "main",
+    "homepageUrl": "https://example.com/complete",
+    "documentationUrl": "https://docs.example.com/complete",
+    "webUrl": "https://github.com/the-running-dev/complete",
+    "cloneUrl": "https://github.com/the-running-dev/complete.git",
+    "sshUrl": "git@github.com:the-running-dev/complete.git",
+    "topics": ["github", "plugin"],
+    "license": "MIT",
+    "primaryLanguage": "TypeScript",
+    "capabilities": {
+      "issues": true,
+      "projects": true,
+      "wiki": false,
+      "pages": true,
+      "downloads": true,
+      "discussions": true
+    }
+  },
+  "technology": {
+    "primaryLanguage": "TypeScript",
+    "languages": [
+      { "name": "TypeScript", "bytes": 200, "percentage": 66.67 },
+      { "name": "JavaScript", "bytes": 100, "percentage": 33.33 }
+    ]
+  },
+  "statistics": {
+    "sizeKilobytes": 42,
+    "stars": 7,
+    "forks": 3,
+    "watchers": 5,
+    "commits": 123,
+    "branches": 4,
+    "tags": 6,
+    "issues": { "open": 2, "closed": 8 },
+    "pullRequests": { "open": 1, "closed": 9 }
+  },
+  "releases": {
+    "total": 1,
+    "latest": {
+      "tagName": "v1.0.0",
+      "name": "First release",
+      "publishedAt": "2026-06-01T00:00:00Z",
+      "isDraft": false,
+      "isPrerelease": false,
+      "url": "https://github.com/the-running-dev/complete/releases/tag/v1.0.0",
+      "assets": [
+        {
+          "name": "complete.tgz",
+          "downloadUrl": "https://example.com/complete.tgz",
+          "contentType": "application/gzip",
+          "size": 4096,
+          "downloadCount": 12
+        }
+      ]
+    }
+  },
+  "contributors": {
+    "total": 1,
+    "truncated": false,
+    "contributors": [
+      {
+        "login": "octocat",
+        "contributions": 25,
+        "profileUrl": "https://github.com/octocat",
+        "accountType": "User"
+      }
+    ]
+  },
+  "portfolio": {
+    "featured": true,
+    "hidden": false,
+    "displayName": "Complete Plugin",
+    "summary": "A complete fixture.",
+    "category": "Developer tools",
+    "status": "maintained",
+    "displayOrder": 1,
+    "technologies": ["Node.js", "TypeScript"],
+    "demoUrl": "https://example.com/demo",
+    "documentationUrl": "https://docs.example.com/complete",
+    "screenshots": ["https://example.com/screenshot.png"],
+    "businessRelevance": "Reference implementation",
+    "personalContribution": "Maintainer",
+    "startedAt": "2024-01-02T03:04:05Z",
+    "endedAt": null,
+    "notes": "Fixture notes"
+  },
+  "diagnostics": [
+    {
+      "code": "fixture_notice",
+      "message": "Fixture diagnostic",
+      "resource": "https://api.github.com/repos/the-running-dev/complete",
+      "detail": "Expected in the complete fixture",
+      "retryable": false
+    }
+  ]
+}

@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { compareIdentity, compareProviderId } from '../../src/models/identity.js';
+import {
+  compareIdentity,
+  compareProviderId,
+  projectIdentitySchema,
+} from '../../src/models/identity.js';
 import { compareCodeUnits } from '../../src/models/primitives.js';
 
 describe('code-unit ordering', () => {
@@ -27,6 +31,15 @@ describe('code-unit ordering', () => {
 });
 
 describe('provider identities', () => {
+  it('rejects leading-zero provider IDs so numeric ordering remains total', () => {
+    expect(projectIdentitySchema.safeParse({ provider: 'github', providerId: '01' }).success).toBe(
+      false,
+    );
+    expect(projectIdentitySchema.safeParse({ provider: 'github', providerId: '0' }).success).toBe(
+      true,
+    );
+  });
+
   it('orders numeric provider IDs instead of comparing their strings', () => {
     expect(compareProviderId('9', '10')).toBe(-1);
     expect(compareProviderId('18446744073709551616', '9')).toBe(1);
@@ -46,5 +59,37 @@ describe('provider identities', () => {
     const afterRename = { provider: 'github', providerId: '123' };
 
     expect(compareIdentity(beforeRename, afterRename)).toBe(0);
+  });
+
+  it('is antisymmetric, transitive, and total across provider-sized IDs', () => {
+    const identities = [
+      '0',
+      '1',
+      '9',
+      '10',
+      '99',
+      '100',
+      '4294967295',
+      '9007199254740991',
+      '18446744073709551616',
+    ].map((providerId) => ({ provider: 'github', providerId }));
+
+    for (const left of identities) {
+      for (const right of identities) {
+        const forward = compareIdentity(left, right);
+        const reverse = compareIdentity(right, left);
+        expect(reverse).toBe(forward === 0 ? 0 : -forward);
+      }
+    }
+
+    for (const left of identities) {
+      for (const middle of identities) {
+        for (const right of identities) {
+          if (compareIdentity(left, middle) <= 0 && compareIdentity(middle, right) <= 0) {
+            expect(compareIdentity(left, right)).toBeLessThanOrEqual(0);
+          }
+        }
+      }
+    }
   });
 });
