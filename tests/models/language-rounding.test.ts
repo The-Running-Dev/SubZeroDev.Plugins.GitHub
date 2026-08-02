@@ -41,4 +41,19 @@ describe('language percentage allocation', () => {
       { name: 'Zig', bytes: 0, percentage: 0 },
     ]);
   });
+
+  it('totals 10,000 basis points across generated distributions', () => {
+    for (let count = 1; count <= 50; count += 1) {
+      const languages = distributeLanguagePercentages(
+        Array.from({ length: count }, (_, index) => ({
+          name: `Language-${String(index).padStart(2, '0')}`,
+          bytes: ((index + 1) * 37 + count * 13) % 997,
+        })),
+      );
+
+      expect(
+        languages.reduce((total, language) => total + Math.round(language.percentage * 100), 0),
+      ).toBe(10_000);
+    }
+  });
 });

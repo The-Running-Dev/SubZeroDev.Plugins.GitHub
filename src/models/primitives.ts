@@ -4,7 +4,7 @@ export const providerSchema = z
   .string()
   .min(1)
   .regex(/^[a-z0-9-]+$/);
-export const providerIdSchema = z.string().regex(/^[0-9]+$/);
+export const providerIdSchema = z.string().regex(/^(0|[1-9][0-9]*)$/);
 export const nonEmptyStringSchema = z.string().min(1);
 export const nullableStringSchema = z.string().nullable();
 export const urlSchema = z.url();
