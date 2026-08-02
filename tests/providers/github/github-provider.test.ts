@@ -40,6 +40,7 @@ const everything: RepositoryFilter = {
 function provider(
   fetch: typeof globalThis.fetch,
   baseUrl = 'https://example.test',
+  retainRawResponses = false,
 ): GitHubProvider {
   return new GitHubProvider({
     token,
@@ -50,6 +51,7 @@ function provider(
     userAgent: 'test-agent',
     fetch,
     baseUrl,
+    retainRawResponses,
   });
 }
 
@@ -365,7 +367,7 @@ describe('GitHubProvider collection', () => {
 
   it('collects the complete standard profile within its declared budget', async () => {
     const stub = collectionStub();
-    const client = provider(stub.fetch);
+    const client = provider(stub.fetch, 'https://example.test', true);
     const discoveredResults: Outcome<DiscoveredRepository, ProviderError>[] = [];
     for await (const result of client.discover(everything)) discoveredResults.push(result);
     const [discovered] = discoveredResults;

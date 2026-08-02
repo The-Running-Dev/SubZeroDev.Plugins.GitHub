@@ -40,6 +40,7 @@ export interface CreateGitHubProviderOptions {
   readonly random?: () => number;
   readonly baseUrl?: string;
   readonly searchRequestsPerMinute?: number;
+  readonly retainRawResponses?: boolean;
 }
 
 export class GitHubProvider implements RepositoryProvider {

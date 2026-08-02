@@ -69,6 +69,7 @@ export interface GitHubRequesterOptions {
   readonly random?: () => number;
   readonly transientRetry?: TransientRetryPolicy;
   readonly searchRequestsPerMinute?: number;
+  readonly retainRawResponses?: boolean;
 }
 
 /** `once` also reports what the response asked us to wait; the retry decision is not its job. */
@@ -329,7 +330,7 @@ export class GitHubRequester {
       };
 
     // An upstream echo must never turn credential retention into a debugging feature.
-    if (!text.includes(this.options.token)) {
+    if (this.options.retainRawResponses === true && !text.includes(this.options.token)) {
       const name = rawResponseName(spec);
       this.raw.set(name, { name, contents: text });
     }

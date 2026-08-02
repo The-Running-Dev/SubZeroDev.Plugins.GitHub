@@ -2,7 +2,6 @@ import { randomUUID } from 'node:crypto';
 
 import { CacheError, type RepositoryCache } from '../cache/store.js';
 import type { ArtifactReference } from '../output/envelope.js';
-import { buildSyncReport } from '../output/sync-report.js';
 import { StagingArea } from '../serialization/atomic-write.js';
 import {
   buildOutputDocuments,
@@ -11,6 +10,7 @@ import {
 } from '../serialization/documents.js';
 import { sha256 } from '../serialization/digest.js';
 import type { FileSystemPort } from './ports.js';
+import { buildSyncReport } from './sync-report.js';
 
 export class ExportError extends Error {
   public constructor(message: string) {
