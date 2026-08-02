@@ -48,7 +48,13 @@ export default tseslint.config(
         {
           patterns: [
             {
-              group: ['../providers/**', '../../src/providers/**', '@octokit/*'],
+              group: [
+                '../providers',
+                '../providers/**',
+                '../../src/providers',
+                '../../src/providers/**',
+                '@octokit/*',
+              ],
               message: 'Provider-specific types are forbidden in provider-neutral domain models.',
             },
           ],
@@ -65,6 +71,7 @@ export default tseslint.config(
           patterns: [
             {
               group: [
+                '../providers',
                 '../configuration/**',
                 '../providers/**',
                 '../cache/**',
