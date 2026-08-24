@@ -36,7 +36,7 @@ export interface GitHubResponse<T> {
  * Rate limiting is deliberately **not** retried: the budget rule is warn at 50% and
  * stop cleanly at 90% reporting partial success, which is the opposite of sleeping
  * until the window resets, and is why `@octokit/plugin-throttling` was rejected
- * (`IMPLEMENTATION-PLAN.md` §1.2). Every request this plugin issues is a `GET`, so
+ * (`design/10-design.md`). Every request this plugin issues is a `GET`, so
  * the usual non-idempotent-retry hazard does not apply.
  */
 export interface TransientRetryPolicy {

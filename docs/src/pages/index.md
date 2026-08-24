@@ -22,11 +22,11 @@ The complete documentation is published at
 - [CLI reference](/docs/reference/cli)
 - [GitHub plugin specification](/docs/reference/specification)
 - [Architecture](/docs/architecture)
-- [Decisions](/docs/decisions/)
+- [Design decision log](https://github.com/The-Running-Dev/SubZeroDev.Plugins.GitHub/blob/main/design/90-decisions.md)
 - [Development guide](/docs/development)
 
 See
-[`BUILD-PLAN.md`](https://github.com/The-Running-Dev/SubZeroDev.Plugins.GitHub/blob/main/BUILD-PLAN.md)
+[`design/30-slices.md`](https://github.com/The-Running-Dev/SubZeroDev.Plugins.GitHub/blob/main/design/30-slices.md)
 for the milestone sequence and current status.
 
 ## Run it yourself
@@ -137,7 +137,7 @@ is their canonical source, and this repository does not keep a second copy of th
 Milestones 0 through 8 are implemented. The first public npm/GHCR/GitHub Release remains gated on the
 stacked pull requests merging and the tagged release workflow completing successfully.
 
-[`BUILD-PLAN.md`](https://github.com/The-Running-Dev/SubZeroDev.Plugins.GitHub/blob/main/BUILD-PLAN.md)
+[`design/30-slices.md`](https://github.com/The-Running-Dev/SubZeroDev.Plugins.GitHub/blob/main/design/30-slices.md)
 says what comes next and in what order.
 
 ## License

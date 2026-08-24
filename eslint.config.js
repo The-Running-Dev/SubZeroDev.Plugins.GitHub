@@ -31,7 +31,7 @@ export default tseslint.config(
           patterns: [
             {
               group: ['@octokit/*'],
-              // ADR-003 removed the dependency; the rule stays as the guard against a
+              // The design decision removed the dependency; the rule stays as the guard against a
               // reintroduction landing outside the adapter.
               message: 'A GitHub API client is confined to src/providers/github/.',
             },
