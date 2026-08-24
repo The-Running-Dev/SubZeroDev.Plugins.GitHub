@@ -6,22 +6,21 @@ sidebar_position: 2
 
 # SubZeroDev GitHub Plugin
 
-| Field      | Value                                                                                                              |
-| ---------- | ------------------------------------------------------------------------------------------------------------------ |
-| Version    | 2.0                                                                                                                |
-| Status     | Phase One — implementation started                                                                                 |
-| Plugin ID  | `subzerodev.github`                                                                                                |
-| CLI        | `subzerodev-github`, alias `sz-github`                                                                             |
-| Contract   | `SubZeroDev.PluginContract` 1.0                                                                                    |
-| Package    | `@subzerodev/plugins-github`                                                                                       |
-| Code       | This repository, `SubZeroDev.Plugins.GitHub`                                                                       |
-| Build plan | [`BUILD-PLAN.md`](https://github.com/The-Running-Dev/SubZeroDev.Plugins.GitHub/blob/main/BUILD-PLAN.md)            |
-| Decisions  | [ADR-001](../decisions/adr-001-hosting-and-versioning.md), [ADR-002](../decisions/adr-002-phase-one-boundaries.md) |
+| Field     | Value                                                                                      |
+| --------- | ------------------------------------------------------------------------------------------ |
+| Version   | 2.0                                                                                        |
+| Status    | Phase One — implementation started                                                         |
+| Plugin ID | `subzerodev.github`                                                                        |
+| CLI       | `subzerodev-github`, alias `sz-github`                                                     |
+| Contract  | `SubZeroDev.PluginContract` 1.0                                                            |
+| Package   | `@subzerodev/plugins-github`                                                               |
+| Code      | This repository, `SubZeroDev.Plugins.GitHub`                                               |
+| Design    | [`design/`](https://github.com/The-Running-Dev/SubZeroDev.Plugins.GitHub/tree/main/design) |
 
 Merged from the two specifications that previously described this plugin: version 1.1 under
-`setup-llm/docs/` and the ecosystem draft. Both are retired, as are the plugin's own
-`IMPLEMENTATION_PLAN.md` and the root `TODO-next.md` — their milestone sequence and completion state
-are now in [`BUILD-PLAN.md`](https://github.com/The-Running-Dev/SubZeroDev.Plugins.GitHub/blob/main/BUILD-PLAN.md).
+`setup-llm/docs/` and the ecosystem draft. Both are retired. The former implementation plans and
+checklists were migrated to the AgentKit design chain; active work is now in
+[`design/30-slices.md`](https://github.com/The-Running-Dev/SubZeroDev.Plugins.GitHub/blob/main/design/30-slices.md).
 
 **The plugin does not require the Automator.** It runs standalone from the CLI or its container, per
 contract ADR-002. It was originally named `SubZeroDev.Automator.Plugins.GitHub`, which implied
@@ -78,7 +77,7 @@ would silently detach.
 
 Node.js 24+, TypeScript, Zod, Pino, Vitest, Docker. JSON and YAML output. GitHub is reached through
 `fetch` and this plugin's own request wrapper rather than through Octokit — see
-[ADR-003](../decisions/adr-003-request-wrapper-and-http-testing.md).
+[the design rationale](https://github.com/The-Running-Dev/SubZeroDev.Plugins.GitHub/blob/main/design/10-design.md).
 
 ## Commands
 

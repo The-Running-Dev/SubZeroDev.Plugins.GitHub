@@ -70,7 +70,7 @@ attestation.
 - **`@octokit/rest` is no longer a dependency.** GitHub is reached through `fetch` and this plugin's own
   request wrapper, which has to retain `304` and `202` as outcomes rather than exceptions and read rate-limit
   and `Link` headers off every response. Recorded in
-  [ADR-003](https://plugins-github.subzerodev.com/docs/decisions/adr-003-request-wrapper-and-http-testing),
+  [the design decision log](https://github.com/The-Running-Dev/SubZeroDev.Plugins.GitHub/blob/main/design/90-decisions.md),
   which also records rejecting `@octokit/plugin-throttling`, `@octokit/plugin-retry`, `p-limit`, `msw`,
   and `nock`.
 

@@ -1,4 +1,10 @@
-See `AGENTS.md` in this repository.
+@AGENTS.md
 
-The instructions live in one file so every agent reads the same thing. A second copy would drift from
-the first, which is the failure this specification set exists to avoid.
+Everything in `AGENTS.md` applies. It is the single agent contract for this repo; this file exists only so Claude Code loads it.
+
+If `@AGENTS.md` import is not resolving in your version, replace this file with a hardlink:
+
+```powershell
+# from repo root, PowerShell as admin not required for hardlinks on same volume
+New-Item -ItemType HardLink -Path CLAUDE.md -Target AGENTS.md -Force
+```

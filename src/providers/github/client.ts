@@ -23,7 +23,7 @@ export interface GitHubClientOptions {
 /**
  * The adapter talks to GitHub through `fetch` and its own request wrapper rather than
  * through Octokit — see
- * [ADR-003](../../../docs/docs/decisions/adr-003-request-wrapper-and-http-testing.md).
+ * [`design/10-design.md`](../../../design/10-design.md).
  * The wrapper has to *retain* `304` and `202` as outcomes, count requests per
  * rate-limit bucket, and read `Link` and rate-limit headers off every response;
  * Octokit throws on any non-2xx, so each of those would arrive as a caught error to

@@ -37,7 +37,7 @@ operation returning immutable projects. GitHub-specific discovery belongs under
 `src/index.ts`. No GitHub type may escape `src/providers/github/` — the domain models stay
 provider-neutral, or the abstraction is decorative. The adapter reaches GitHub through `fetch` and its
 own request wrapper rather than through Octokit, per
-[ADR-003](./decisions/adr-003-request-wrapper-and-http-testing.md).
+[the design rationale](https://github.com/The-Running-Dev/SubZeroDev.Plugins.GitHub/blob/main/design/10-design.md).
 
 ## The plugin boundary
 

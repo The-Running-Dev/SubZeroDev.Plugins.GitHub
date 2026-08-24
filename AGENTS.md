@@ -1,5 +1,17 @@
 # Repository Guidelines
 
+## Source of truth
+
+The AgentKit design chain is authoritative for this repository’s intent and active work:
+
+1. `design/00-brief.md`
+2. `design/20-contract.md`
+3. `design/10-design.md`
+4. `design/30-slices.md`
+5. `design/90-decisions.md`
+
+The plugin contract outranks this repository where a rule applies identically to a second plugin. Documentation describes the product; it does not replace the design chain as a decision authority.
+
 ## Project identity
 
 This repository contains the SubZeroDev GitHub Plugin: a CLI-first Node.js
@@ -20,9 +32,8 @@ the shortcut is multiplied by every plugin that follows.
 **Generic decisions do not belong here.** This plugin was specified before the contract existed, so
 it accumulated an exit-code table, secret-handling rules, serialization rules, configuration
 precedence, and logging levels — every one of which a second plugin faces identically. They were
-promoted to the contract by contract ADR-003, and
-[`adr-002-phase-one-boundaries.md`](docs/docs/decisions/adr-002-phase-one-boundaries.md) here is
-marked rather than rewritten so the reasoning survives. Do not push them back down.
+promoted to the contract. The local history is recorded in
+[`design/90-decisions.md`](design/90-decisions.md). Do not push them back down.
 
 ## Start safely
 
@@ -86,7 +97,7 @@ ID does not survive a round trip through a JSON number in every language.
 **No GitHub type escapes `providers/github`.** The domain models are provider-neutral, and the
 moment a provider type appears in one, the abstraction is decorative. The adapter no longer depends on
 Octokit at all — requests go through `fetch` and this plugin's own wrapper, per
-[ADR-003](docs/docs/decisions/adr-003-request-wrapper-and-http-testing.md) — and the ESLint restriction
+[`design/10-design.md`](design/10-design.md) — and the ESLint restriction
 on `@octokit/*` stays as the guard against a reintroduction landing outside the adapter.
 
 **Pino writes to stderr.** It defaults to stdout, which corrupts the envelope and breaks every
@@ -137,7 +148,7 @@ milestone is larger than it looks:
 
 ## Sequencing
 
-`BUILD-PLAN.md` holds the milestones. **Milestone 3.5 is the de-risking step** and is deliberately
+`design/30-slices.md` holds active slices. The former Milestone 3.5 de-risking step was deliberately
 out of dependency order: run `validate → sync → list` against one real account _before_ the expensive
 statistics and cache work, so everything after is built against real payloads rather than mocks that
 encode the same assumptions as the code.
@@ -150,8 +161,7 @@ back into the Milestone 1 fixtures.
 The plugin was originally `SubZeroDev.Automator.Plugins.GitHub`, packaged as
 `@subzerodev/automator-plugin-github`. That name asserted the plugin is a component of the Automator,
 which the architecture rejects. It is now `SubZeroDev.Plugins.GitHub` and `@subzerodev/plugins-github`
-— see the amendment in
-[`adr-001-hosting-and-versioning.md`](docs/docs/decisions/adr-001-hosting-and-versioning.md). Do not
+— see [`design/90-decisions.md`](design/90-decisions.md). Do not
 reintroduce the old form.
 
 ## What the plugin contract already decides
@@ -219,13 +229,13 @@ schemas/contract/    the plugin contract's manifest and result-envelope schemas,
                      for provenance and the refresh procedure
 ```
 
-`docs/docs/decisions/` **is** this repository's ADR directory. Do not create a second `adr/` at the
-root — that duplication is exactly the failure the ecosystem specifications were written to stop.
+`design/90-decisions.md` is this repository's decision log. Do not create an ADR directory or a second
+decision record — that duplication is exactly the failure the ecosystem specifications were written to stop.
 
 Most `src/` subdirectories above are currently placeholders (`.gitkeep` only). Beyond the vendored
 contract schemas, the plugin contract also requires `examples/`, `plugin.yaml`, and a `CHANGELOG.md`
 at the repository root, plus this plugin's own generated `schemas/projects.schema.json` — none of which
-exist yet. `BUILD-PLAN.md` tracks when each lands, and `IMPLEMENTATION-PLAN.md` says how.
+exist yet. `design/30-slices.md` tracks remaining work; the tree states implementation detail.
 
 ## Documentation
 
@@ -324,6 +334,14 @@ canary must be present in no output, log, artifact, cache, error, or image layer
 resync must be byte-identical and measurably cheaper, shown by a request count rather than by
 assertion.
 
+## Verification
+
+- **A regression test is verified by reverting the fix** and confirming it fails. A test that
+  passes with and without the fix guards nothing.
+- **A schema or validator change is not done until it has rejected something.** Positive and
+  negative cases both, with the counts stated. A validator that has never failed is not known to
+  constrain anything.
+
 ## Git and GitHub delivery
 
 - Work on a focused `agent/<description>` branch.
@@ -331,6 +349,11 @@ assertion.
 - Stage intended paths explicitly; never use `git add -A` or `git add .` because either can absorb
   unrelated worktree changes.
 - Open a draft pull request unless the user requests ready-for-review.
+- Push every commit before announcing a pull request is ready — announcing invites an immediate
+  merge, and a commit pushed after that lands on a branch nobody merges.
+- Check review threads, not just requested reviewers, before treating a pull request as settled —
+  an automated reviewer can leave blocking conversation threads that do not appear in a reviewer
+  listing.
 - Do not reply to or resolve review threads without authorization.
 - Merge only after required application and documentation checks pass.
 - After merge, fast-forward local `main`, verify merge-triggered workflows, and
@@ -362,15 +385,44 @@ the point of naming a canonical copy is that a reviewer can check the others aga
 - **Reference, never restate.** A rule that lives in another document is linked, not copied. Two
   copies of a rule is a promise they will diverge and a guarantee nobody will notice which is stale.
 - **The plugin contract outranks plugin specifications.** Where a plugin document and the contract
-  disagree, the contract is correct and the plugin document has drifted. See ADR-003 in
+  disagree, the contract is correct and the plugin document has drifted. See the contract's decision log in
   `SubZeroDev.PluginContract`.
-- **A decision gets an ADR.** Status is exactly one of `Proposed`, `Accepted`, `Superseded`, or
-  `Deprecated`, under a `## Status` heading. An accepted ADR states its context, the decision, the
-  consequences _including the costs_, and the alternatives it rejected and why. "Accepted in existing
-  practice" is not a status — ratifying current practice is a note in the context.
+- **A decision gets a `design/90-decisions.md` entry.** It states its context, decision, consequences
+  including costs, and rejected alternatives. "Accepted in existing practice" is not a decision — it is
+  context for the decision that ratifies or replaces it.
 - **Move, never copy.** A specification has exactly one home. Where another repository needs the
   text, it references a tagged commit rather than duplicating the file.
 - **Give reasons.** These documents are read by people deciding what to build. An assertion with no
   reason cannot be evaluated, and cannot be safely revised by someone who was not there when it was
   written.
 - **Markdown is Prettier-formatted**, 100 columns, LF endings.
+
+## Why the agent kit is installed this way
+
+Recorded by the `SubZeroDev.AgentKit` installer. The 2026-08-24 migration installed `design/` and
+moved this repository’s planning and decision ownership there; see `design/90-decisions.md`.
+
+- **`AGENTS.md`/`CLAUDE.md` direction** — kept as found: this file holds content, `CLAUDE.md` stays
+  the pointer. Rejected: flipping to the kit's default arrangement (`CLAUDE.md` holding content) —
+  this repository's pointer already states its own reason and predates the kit.
+- **Kit sections merged in** — added `## Verification` (regression-test-by-reversion, validator-must-
+  reject-something) and two `## Git and GitHub delivery` bullets (push before announcing a PR ready;
+  check review threads, not just requested reviewers), because they were absent here and are not tied
+  to the kit's `design/` pipeline. Everything else the kit's own `AGENTS.md` states was left out: most
+  of it (_Safe start_, _Single ownership_, _Move, never copy_, staging/authorization rules) is already
+  covered here in different words via this repository's `SubZeroDev.Ecosystem`-sourced conventions, and
+  the rest (_Source of truth_, _Hard rules_, _Tracking work_, _Decision logging_ format, _Session
+  boundaries_) is scaffolding for the kit's `design/` slice pipeline, which was not installed. Rejected:
+  merging it anyway under the kit's own headings, which would duplicate rules this file already states.
+- **`agent.md`** — installed as the kit's unpruned seed. No lesson was pruned: every one plausibly
+  applies to this repository's actual stack (Node/TS, Docker, Prettier, CI, Docusaurus docs) rather
+  than to a stack this repository doesn't use. Rejected: pruning speculatively — the kit's instruction
+  is to prune only what is demonstrably inapplicable.
+- **`.claude/commands/*.md`** — installed all 21 unmodified, including the ones that reference a
+  `design/` path. Rejected: withholding them until the `design/` question resolves — the commands are
+  usable regardless, and the kit only requires rewriting the `design/` reference _if_ a relocation is
+  later decided, not before.
+- **`codex/PROFILES.md`** — skipped, the kit's own default: no `.codex/` directory, profile reference,
+  or other evidence of Codex use was found in this repository.
+- **`.github/ISSUE_TEMPLATE/`** — installed `bug.md` and `story.md`; the directory did not previously
+  exist.

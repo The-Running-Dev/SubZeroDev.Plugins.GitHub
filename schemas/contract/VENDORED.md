@@ -27,6 +27,6 @@ path that no longer resolves.
 3. Update this table: new source (a commit-pinned URL or tag, not a working-tree path), new `$id` if
    the schema version changed, new copy date, new sha256 for each file.
 4. Run `tests/contract/*.test.ts`. **A newly failing test is a real incompatibility to resolve, not a
-   test to edit** — per this plugin's own `IMPLEMENTATION-PLAN.md` §11 and the reusable plugin
+   test to edit** — per this plugin's own `design/20-contract.md` and the reusable plugin
    implementation guide's rule that a failing ported/golden test means the change broke something, not
    that the test was wrong.
