@@ -17,7 +17,7 @@ The complete documentation is published at
 - [CLI reference](https://plugins-github.subzerodev.com/docs/reference/cli)
 - [GitHub plugin specification](https://plugins-github.subzerodev.com/docs/reference/specification)
 - [Architecture](https://plugins-github.subzerodev.com/docs/architecture)
-- [Decisions](https://plugins-github.subzerodev.com/docs/decisions/)
+- [Design decision log](https://github.com/The-Running-Dev/SubZeroDev.Plugins.GitHub/blob/main/design/90-decisions.md)
 - [Development guide](https://plugins-github.subzerodev.com/docs/development)
 
 See

@@ -22,7 +22,7 @@ The complete documentation is published at
 - [CLI reference](/docs/reference/cli)
 - [GitHub plugin specification](/docs/reference/specification)
 - [Architecture](/docs/architecture)
-- [Decisions](/docs/decisions/)
+- [Design decision log](https://github.com/The-Running-Dev/SubZeroDev.Plugins.GitHub/blob/main/design/90-decisions.md)
 - [Development guide](/docs/development)
 
 See
