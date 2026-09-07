@@ -2,13 +2,12 @@
 description: Interrogate the concept brief before any design work
 ---
 
-<!-- companion:start -->
-
+<!-- companion:declared:start -->
 **Per-repo companion:** `.claude/commands/brief-check-local.md`. Read it now, if it exists — an absent,
 empty, or frontmatter-only file is no companion, and this file then stands alone.
 It may override: `vocabulary`, `document-map`. It may never override anything in
-[`.claude/COMPANIONS.md`](../COMPANIONS.md) § _Never_, which is also where these categories are defined.
-<!-- companion:end -->
+[`.claude/COMPANIONS.md`](../COMPANIONS.md) § *Never*, which is also where these categories are defined.
+<!-- companion:declared:end -->
 
 Read `design/00-brief.md`.
 
@@ -22,7 +21,6 @@ Produce exactly these four lists:
 4. **Definition-of-done gaps** — what would have to be true for this to be finished, that the brief does not currently assert.
 
 Rules:
-
 - No architecture. No technology names. No solutions.
 - Do not rewrite the brief. Output the lists only.
 - If a list is empty, say so. Do not manufacture entries.

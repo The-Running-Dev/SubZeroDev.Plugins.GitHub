@@ -8,6 +8,20 @@ Append-only. Newest at the top. The rejected alternatives are the point — with
 
 ---
 
+## 2026-09-07 — Adopt current AgentKit cores and support tooling
+
+**Decision.** Reconcile the current AgentKit command cores and tools into this repository, using
+the kit's declared companion markers. Keep this repository's `AGENTS.md` as the content-bearing
+instruction file and merge only compatible generic guidance and lessons.
+
+**Why.** The previous AgentKit snapshot left command and tool behavior behind the shared kit,
+including the current companion mechanism. The repository's own guidance carries GitHub-plugin
+invariants and must continue to outrank generic kit wording.
+
+**Rejected.** Retain the prior command cores — that prevents routine updates and leaves the
+companion markers stale. Replace `AGENTS.md` wholesale — that removes project-specific operating
+constraints and verification requirements.
+
 ## 2026-08-24 — Migrate planning and decision ownership to AgentKit
 
 **Decision.** `design/` is the canonical home for this repository’s brief, architecture, contract, slice state, and future decisions. The former root build and implementation plans and the project ADR set are superseded as planning authorities. Product documentation may describe current behavior, but must not become a second decision ledger.

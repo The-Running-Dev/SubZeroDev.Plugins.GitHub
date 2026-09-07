@@ -101,10 +101,13 @@ function Get-SliceCriteria {
     $current = $null
 
     foreach ($line in (Get-Content -LiteralPath $Path)) {
-        if ($line -match '^##\s') {
-            # A new second-level heading always ends the previous slice's body, so an
-            # Acceptance line can never be attributed across a section boundary.
-            $current = if ($line -match '^##\s+S(?<n>\d+)\b') { [int]$Matches['n'] } else { $null }
+        if ($line -match '^#{2,3}\s') {
+            # A new second- or third-level heading always ends the previous slice's body, so an
+            # Acceptance line can never be attributed across a section boundary. Slices sit at
+            # `##` when they are top-level sections (S1-S18) and at `###` when nested under
+            # `## Outstanding` (S19 onward, design/90-decisions.md, 2026-08-30 revision) - both
+            # depths name the same thing and are compared the same way.
+            $current = if ($line -match '^#{2,3}\s+S(?<n>\d+)\b') { [int]$Matches['n'] } else { $null }
             if ($null -ne $current -and -not $slices.ContainsKey($current)) {
                 $slices[$current] = [System.Collections.Generic.List[string]]::new()
             }
@@ -163,6 +166,32 @@ function Get-IssuePin {
     $null
 }
 
+function Invoke-GhRaw {
+    <#
+        gh writes UTF-8. PowerShell's native-command capture (`& gh @args`) decodes that
+        stdout using [Console]::OutputEncoding, which on a Windows host defaults to the OEM
+        code page (ibm437) rather than UTF-8 - the same class of bug Sync-Kit.ps1's
+        Invoke-GitRaw fixed for git's output (#20), never applied to gh. A non-ASCII byte in
+        an issue body (a section mark in a slice pin, say) then decodes to the wrong
+        character and the pin regex below silently fails to match. Routing through
+        ProcessStartInfo with an explicit UTF-8 StandardOutputEncoding sidesteps the console
+        entirely.
+    #>
+    param([string[]] $GhArgs)
+    $psi = [System.Diagnostics.ProcessStartInfo]::new()
+    $psi.FileName = 'gh'
+    foreach ($a in $GhArgs) { $psi.ArgumentList.Add($a) }
+    $psi.RedirectStandardOutput = $true
+    $psi.RedirectStandardError = $true
+    $psi.UseShellExecute = $false
+    $psi.StandardOutputEncoding = [System.Text.UTF8Encoding]::new($false)
+    $proc = [System.Diagnostics.Process]::Start($psi)
+    $stdout = $proc.StandardOutput.ReadToEnd()
+    $proc.StandardError.ReadToEnd() | Out-Null
+    $proc.WaitForExit()
+    [pscustomobject]@{ Output = $stdout; ExitCode = $proc.ExitCode }
+}
+
 function Get-TrackerIssue {
     param([string] $Repository)
 
@@ -170,20 +199,21 @@ function Get-TrackerIssue {
     if ($Repository) { $ghArgs += @('-R', $Repository) }
 
     try {
-        $json = & gh @ghArgs 2>$null
-        if ($LASTEXITCODE -ne 0) {
-            return [pscustomobject]@{ Issues = @(); Failure = (New-Failure -Reason 'GhUnavailable' -Detail "gh exited $LASTEXITCODE") }
+        $result = Invoke-GhRaw -GhArgs $ghArgs
+        if ($result.ExitCode -ne 0) {
+            return [pscustomobject]@{ Issues = @(); Failure = (New-Failure -Reason 'GhUnavailable' -Detail "gh exited $($result.ExitCode)") }
         }
+        $json = $result.Output
     } catch {
         return [pscustomobject]@{ Issues = @(); Failure = (New-Failure -Reason 'GhUnavailable' -Detail $_.Exception.Message) }
     }
 
-    if ([string]::IsNullOrWhiteSpace(($json -join ''))) {
+    if ([string]::IsNullOrWhiteSpace($json)) {
         return [pscustomobject]@{ Issues = @(); Failure = (New-Failure -Reason 'GhUnavailable' -Detail 'gh returned no output') }
     }
 
     try {
-        $parsed = ($json -join "`n") | ConvertFrom-Json
+        $parsed = $json | ConvertFrom-Json
     } catch {
         return [pscustomobject]@{ Issues = @(); Failure = (New-Failure -Reason 'TrackerUnreadable' -Detail $_.Exception.Message) }
     }

@@ -23,6 +23,12 @@ and preferences belong in `AGENTS.md`.
   pass over a spec set found twelve inconsistencies, including a functional bug where a
   derived-path list omitted a field, making one section's behaviour impossible under
   another's rules.
+- **Checking a table for *missing* rows has not checked the table.** A row also goes stale by
+  *narrowing*: the class it names widens, the row does not, and a pass hunting absent rows
+  sees nothing wrong. Three rows of `design/10-design.md` § *Failure modes* survived the
+  2026-09-05 pass that added eight missing ones to that same table — one of them naming a
+  defect shape (`RecordPairMalformed` as field *duplication*) the checker has never had —
+  and cost a whole further reconciliation, re-deriving every row against the script, to find.
 - **Search the concept, not the phrasing you just edited.** Striking a requirement from
   seven places, a grep for the exact removed phrase returned clean — it could not match the
   same requirement worded differently, and six stale statements survived a check reported as
@@ -41,6 +47,14 @@ and preferences belong in `AGENTS.md`.
   silently when a document is restructured. Positional numbering makes this worse: inserting
   a document between existing ones means renumbering everything after it and rewriting every
   link. **Prefer appending.**
+- **A deferral whose stated blocker is later removed is not re-checked by anything.** Two
+  slices left four absorptions undone, each naming the same grammar limit as its sole reason
+  and recording that reason only in a commit message. The issue that removed the limit swept
+  the three cases it had been filed for and closed. The other four sat in place across two
+  further sync runs until a reconciliation pass re-derived both the deferrals and the fact
+  their blocker was gone. **When work is deferred on a named blocker, the change that removes
+  that blocker owes a sweep of everything citing it** — and the citations live in commit
+  messages, which nothing reads.
 
 ## Verification
 
@@ -54,6 +68,11 @@ and preferences belong in `AGENTS.md`.
 - **Running the code beats recalling it.** A golden-test vector written from memory was
   wrong; executing the reference implementation caught it before it became the expected
   value everything else was checked against.
+- **A test that hardcodes the size of a set the design lets grow guards the wrong thing.**
+  `Test-DesignState.Tests.ps1`'s contract-record count went stale three times — 8→9, 9→10,
+  10→14 — and each staleness surfaced as a red gate on an unrelated pull request, costing a
+  triage pass to re-establish that the addition was legitimate. Assert the correspondence — a
+  record per named surface, and no more — not the cardinality.
 - **Several confident recollections were wrong.** Every claim about an external contract
   should be checked against the published spec, not remembered.
 
@@ -88,6 +107,12 @@ and preferences belong in `AGENTS.md`.
   holding credentials it never uses.
 - **Verify a regression test by reverting the fix.** A test that passes either way guards
   nothing.
+- **A fix that only changed the odds is not a fix.** An intermittent failure went away when
+  test parallelism was disabled — three consecutive clean runs — and came back on the fourth.
+  The real cause was connection pooling handing out a stale schema snapshot, found by a tight
+  single-threaded loop that reproduced it on iteration zero. **Cost: a wrong diagnosis that
+  looked right, plus the repro loop to overturn it.** When a fix is "it stopped failing",
+  suspect the odds moved rather than the cause, and say over how many runs.
 - **A fix that only changed the odds is not a fix.** An intermittent failure went away when
   test parallelism was disabled — three consecutive clean runs — and came back on the fourth.
   The real cause was connection pooling handing out a stale schema snapshot, found by a tight

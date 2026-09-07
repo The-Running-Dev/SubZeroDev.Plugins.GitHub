@@ -7,7 +7,6 @@ Two formats exist depending on your CLI version. Check with `codex --version`, a
 `--profile` no longer reads `[profiles.<name>]` from `config.toml`, and the top-level `profile = "..."` selector is gone. Each profile is its own file in `~/.codex/`, layered above your base config, so it only needs the keys that differ.
 
 **`~/.codex/architect.config.toml`**
-
 ```toml
 model = "gpt-5.6-sol"
 model_reasoning_effort = "xhigh"
@@ -16,7 +15,6 @@ sandbox_mode = "read-only"
 ```
 
 **`~/.codex/builder.config.toml`**
-
 ```toml
 model = "gpt-5.6-terra"
 model_reasoning_effort = "medium"
@@ -25,7 +23,6 @@ sandbox_mode = "workspace-write"
 ```
 
 **`~/.codex/quick.config.toml`**
-
 ```toml
 model = "gpt-5.3-codex-spark"
 model_reasoning_effort = "low"
