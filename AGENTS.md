@@ -375,6 +375,22 @@ assertion.
 - [ ] CI, deployment, and published routes are verified before being reported.
 - [ ] No secret canary anywhere in output, log, artifact, cache, error, or image layer.
 
+## Marked regions
+
+A marked region is a fenced span inside a prose document that another tool can check for
+presence and shape: an opening marker naming an id, a body, and a closing marker. The two forms
+are:
+
+- **Projected** — `<!-- <id>:start -->` … `<!-- <id>:end -->`; rendered from records and
+  overwritten on every regeneration.
+- **Declared** — `<!-- <id>:declared:start -->` … `<!-- <id>:declared:end -->`;
+  hand-authored and never written by a generator.
+
+The bare form means projected, not declared. A projected id and a declared id share one
+namespace: the same id in both forms is a collision, not two regions. Command companion blocks
+are declared regions with id `companion`; the companion mechanism lives in
+`.claude/COMPANIONS.md`.
+
 ## Conventions
 
 These hold in every SubZeroDev specification repository. The canonical copy of this block is
@@ -426,3 +442,9 @@ moved this repository’s planning and decision ownership there; see `design/90-
   or other evidence of Codex use was found in this repository.
 - **`.github/ISSUE_TEMPLATE/`** — installed `bug.md` and `story.md`; the directory did not previously
   exist.
+
+- **2026-09-07 sync** — adopted the current AgentKit command cores and support scripts, including
+  the declared companion-region mechanism. The repository-specific instruction structure and
+  project guidance remain authoritative; relevant new retrospective lessons were incorporated
+  into `agent.md`. Rejected: replacing `AGENTS.md` wholesale with the kit's generic contract,
+  which would lose GitHub-plugin-specific ownership, invariants, and validation rules.

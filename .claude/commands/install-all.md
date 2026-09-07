@@ -3,13 +3,12 @@ description: Reconcile the kit into every SubZeroDev.* repository, unattended. U
 argument-hint: [repo name[,repo name...]]
 ---
 
-<!-- companion:start -->
-
+<!-- companion:declared:start -->
 **Per-repo companion:** `.claude/commands/install-all-local.md`. Read it now, if it exists — an absent,
 empty, or frontmatter-only file is no companion, and this file then stands alone.
 It may override: `extra-steps`, `tightened-authorization`. It may never override anything in
-[`.claude/COMPANIONS.md`](../COMPANIONS.md) § _Never_, which is also where these categories are defined.
-<!-- companion:end -->
+[`.claude/COMPANIONS.md`](../COMPANIONS.md) § *Never*, which is also where these categories are defined.
+<!-- companion:declared:end -->
 
 Run `INSTALL.md`'s reconciliation against every sibling repository, in one unattended pass. **$1**, if given, is an explicit ordered list of repo names (comma-separated) — only those run, in that order. Bare, it discovers every `SubZeroDev.*` sibling of this kit and runs them alphabetically.
 
@@ -18,12 +17,19 @@ This command does not replace `/install`; it orchestrates it. Discovery, orderin
 ## Phase 0 — Discover
 
 ```powershell
-Get-ChildItem (Split-Path <kit-root> -Parent) -Directory -Filter 'SubZeroDev.*'
+$kitRoot = git rev-parse --show-toplevel
+Get-ChildItem (Split-Path $kitRoot -Parent) -Directory -Filter 'SubZeroDev.*'
 ```
+
+Run this from the repository that holds the installed kit; `$kitRoot` is that repository's
+resolved Git root.
 
 - Drop the kit itself.
 - **Resolve every candidate's real root** with `git -C <candidate> rev-parse --show-toplevel` before adding it to the list. Two paths resolving to the same root — a junction, a symlink, a Dropbox-synced duplicate — are one repository; keep the first, report the rest as skipped duplicates. A stray `SubZeroDev.Platform;C` sitting next to `SubZeroDev.Platform` is exactly this case: check before assuming two candidates differ.
-- **Not a git repository** — report and skip it. Do not stop the run for one bad candidate.
+- **Not a git repository** — report and skip it. Do not stop the run for one bad candidate, and **do not
+  initialize one here.** `INSTALL.md` phase 4 creates an absent repository under a sign-off this command
+  never collects; unattended, across a directory of candidates, that turns a stray or mistyped sibling into
+  a repository holding a copy of the kit. Attended `/install` is where an absent repository is created.
 - Order: the explicit list in `$1` if given, else alphabetical.
 
 ## Phase 1 — Per target, run `INSTALL.md` phases 0 through 2 unmodified
@@ -38,7 +44,7 @@ Orient, classify, reconcile — exactly as `INSTALL.md` states them. Running sev
 
 That is most of what this command used to carry across nineteen files per repository, and it is the whole reason the core/companion split exists — read `.claude/COMPANIONS.md` before running against anything.
 
-**Is a named fork with no default** — `INSTALL.md` phase 1's _Occupied_ state, `design/` occupied or ambiguous against an existing plans/ADR home, both `AGENTS.md` and `CLAUDE.md` holding content, `.github/ISSUE_TEMPLATE/` already present, a same-named command already present, an `Unmigrated-Blocked` core, and the `settings.json` hooks — `SessionEnd` and `UserPromptSubmit`, both of which `INSTALL.md` requires proposing and waiting on, unconditionally, with no automatic path at all. **Skip that artifact — or, if it blocks classifying the rest, that whole repository — record it as needing a decision, and continue to the next target.** Never pick the answer an unattended run cannot ask about, and never write either hook here.
+**Is a named fork with no default** — `INSTALL.md` phase 1's *Occupied* state, `design/` occupied or ambiguous against an existing plans/ADR home, both `AGENTS.md` and `CLAUDE.md` holding content, `.github/ISSUE_TEMPLATE/` already present, a same-named command already present, an `Unmigrated-Blocked` core, and the `settings.json` hooks — `SessionEnd` and `UserPromptSubmit`, both of which `INSTALL.md` requires proposing and waiting on, unconditionally, with no automatic path at all. **Skip that artifact — or, if it blocks classifying the rest, that whole repository — record it as needing a decision, and continue to the next target.** Never pick the answer an unattended run cannot ask about, and never write either hook here.
 
 **`Unmigrated-Blocked` is a fork even though its recommended resolution never varies.** Writing the companion is authoring that repository's policy for that command, which is exactly the class of thing an unattended pass does not do on its own authority. Report it and move on.
 
@@ -62,9 +68,9 @@ This is the mechanical backstop for everything above — the phase-2 rules say w
 
 ## Phase 3 — What must not happen, in any target
 
-Same list as `INSTALL.md`'s, and unattended does not relax it — if anything it matters more, since nothing here waits for a human to notice a mistake before it repeats across the next repository:
+`INSTALL.md`'s list, and unattended does not relax it — if anything it matters more, since nothing here waits for a human to notice a mistake before it repeats across the next repository. **One entry is tightened rather than inherited**, and it is the first:
 
-- No commit, no push, no pull request, in any target.
+- **No commit, no push, no pull request, in any target** — this is stricter than `INSTALL.md` phase 4 step 8, which delivers on a feature branch. Attended, one target, that branch is reviewable before anything else happens to it. Unattended, across every sibling repository, it is a pull request per repo that nobody asked for, opened faster than anyone can read them, on repositories whose forks this pass has already declined to answer. The write surface below is the whole of what an unattended pass leaves behind, and it stops at the working tree.
 - No `git add -A`, `git add .`, or bare-directory add — this command does not stage anything at all.
 - No deletion without approval, including proposed `agent.md` prunes — leave those unpruned and listed, not silently applied.
 - No write to a target's `settings.json`, `settings.local.json`, or `launch.json` beyond the (skipped, per phase 2) `SessionEnd` and `UserPromptSubmit` hooks.

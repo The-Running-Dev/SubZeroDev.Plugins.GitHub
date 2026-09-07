@@ -31,5 +31,15 @@ docs/sidebar.ts
 # fail the GeneratedFile drift check. docs/docs/index.md is deliberately NOT listed: under this
 # repository's routeBasePath: 'docs' it is hand-authored, so it is format-governed like any other page.
 docs/src/pages/index.md
+
+# AgentKit owns these artifacts byte-for-byte. Local formatting would turn every core update into
+# a repository edit and block future safe synchronizations.
+.claude/COMPANIONS.md
+.claude/commands
+.claude/kit.json
+.github/ISSUE_TEMPLATE/bug.md
+.github/ISSUE_TEMPLATE/story.md
+agent.md
+codex/PROFILES.md
 .github/workflows/docs-ci.yml
 .github/workflows/docs-deploy.yml
