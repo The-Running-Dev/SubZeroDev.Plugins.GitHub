@@ -1,5 +1,7 @@
 # Repository Guidelines
 
+**Read `AGENTS.shared.md` (home install: `C:/Users/Ben/.agent-kit/AGENTS.shared.md`) completely before this file.** It holds the rules every repository using the kit shares.
+
 ## Source of truth
 
 The AgentKit design chain is authoritative for this repository’s intent and active work:
