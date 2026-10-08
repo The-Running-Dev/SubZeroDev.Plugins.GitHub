@@ -41,5 +41,3 @@ docs/src/pages/index.md
 .github/ISSUE_TEMPLATE/story.md
 agent.md
 codex/PROFILES.md
-.github/workflows/docs-ci.yml
-.github/workflows/docs-deploy.yml

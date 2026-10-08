@@ -274,10 +274,10 @@ as outputs, update cross-references when pages or headings move, and verify
 claims against authoritative sources. External references must use published
 URLs, never relative traversal into another repository.
 
-The documentation base image is pinned by immutable digest in `docs/Dockerfile`,
-`docs.ps1`, `.github/workflows/docs-ci.yml`, and
-`.github/workflows/docs-deploy.yml`. Update all four references together after
-inspecting the current published digest.
+The documentation base image is pinned by immutable digest in `docs/Dockerfile`
+and `docs.ps1`. Update both references together after inspecting the current
+published digest. CI builds through the shared `docs.yml` reusable workflow
+called from `.github/workflows/docs.yml`, which pins its own build-agent image.
 
 ## Repository bootstrap decisions
 
