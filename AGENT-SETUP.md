@@ -400,8 +400,7 @@ build/
 .config/
 └── DocumentationRules.psd1
 .github/workflows/
-├── docs-ci.yml
-└── docs-deploy.yml
+└── docs.yml
 ```
 
 The installer supports a different single-segment docs directory, but use
@@ -481,20 +480,20 @@ The same immutable documentation image must appear in all installer-owned
 references, normally:
 
 1. `docs/Dockerfile`;
-2. `docs.ps1`;
-3. `.github/workflows/docs-ci.yml`;
-4. `.github/workflows/docs-deploy.yml`.
+2. `docs.ps1`.
 
-Update all references together. The deploy workflow must run repository
-documentation validation before building, packaging, and deploying Pages.
+Update both together. `.github/workflows/docs.yml` is a repository-owned caller
+of the shared `The-Running-Dev/GitHub-ActionTemplates` `docs.yml` reusable
+workflow, which builds on its own pinned build-agent image, so it carries no
+documentation image reference. It must run repository documentation validation
+(`pre-build: ./build/Test-Documentation.ps1`) before building, packaging, and
+deploying Pages.
 
 Do not require the deployment job as a pull-request status check because it
-runs only after merge. Require the two template PR checks by their actual
-reported names:
+runs only after merge. Require the PR build check by its actual reported name:
 
 ```text
-Documentation links and terminology
-Verify Documentation Build
+docs / Build
 ```
 
 If the application has its own CI, require its real check name too.
