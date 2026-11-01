@@ -11,6 +11,8 @@ export type CollectionProfile = 'basic' | 'standard' | 'detailed';
  * either way.
  */
 export interface RepositoryFilter {
+  /** Defaults to owned; selected fetches only the explicitly named accessible repositories. */
+  readonly scope?: 'owned' | 'selected';
   readonly includeForks: boolean;
   readonly includeArchived: boolean;
   readonly includeTemplates: boolean;

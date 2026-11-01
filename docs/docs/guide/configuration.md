@@ -6,6 +6,8 @@ sidebar_position: 2
 
 # Configuration
 
+Repository discovery defaults to `repositories.scope: "owned"`. To collect an explicit portfolio spanning personal and organization repositories, set `scope: "selected"` and provide a nonempty `includeSlugs` list of exact `owner/name` values. This mode reads each repository directly with the configured credential; it does not enumerate organizations or fall back to the host GitHub CLI. Slugs must be unique without URLs or wildcards. Existing exclusions and repository flags still apply. An inaccessible repository fails discovery instead of silently shrinking the portfolio. The authenticated account remains the credential's identity; repository owners can differ.
+
 Start from `examples/github.config.json`. Relative cache, output, and portfolio-override paths resolve
 against the configuration file's directory, not the shell's working directory. Effective path
 precedence is CLI where a command exposes an override, then environment, then file, then default.

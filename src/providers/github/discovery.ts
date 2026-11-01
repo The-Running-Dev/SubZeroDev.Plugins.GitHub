@@ -34,6 +34,42 @@ export async function* discoverOwnedRepositories(
   const include = filter.includeSlugs.map(compileGlob);
   const exclude = filter.excludeSlugs.map(compileGlob);
 
+  if (filter.scope === 'selected') {
+    for (const slug of filter.includeSlugs) {
+      const response = await client.requester.get(
+        {
+          resource: 'selected-repository',
+          url: githubUrl(client.baseUrl, `repos/${slug}`).toString(),
+          bucket: 'core',
+        },
+        (value) => githubRepositorySchema.parse(value),
+      );
+      if (!response.ok) {
+        yield response;
+        return;
+      }
+      const repository = response.value.data;
+      if (repository === null) {
+        yield {
+          ok: false,
+          error: providerError(
+            'response-shape',
+            'github_repository_missing',
+            'GitHub returned no selected repository.',
+            { status: response.value.status, retryable: false },
+          ),
+        };
+        return;
+      }
+      if (seen.has(repository.id)) continue;
+      seen.add(repository.id);
+      // The requested endpoint already selects this identity. GitHub may redirect
+      // an old slug to its canonical name after a rename or transfer.
+      if (matchesFilter(repository, filter, [], exclude)) yield { ok: true, value: repository };
+    }
+    return;
+  }
+
   for (let page = 1; ; page += 1) {
     const url = githubUrl(client.baseUrl, 'user/repos', {
       affiliation: 'owner',

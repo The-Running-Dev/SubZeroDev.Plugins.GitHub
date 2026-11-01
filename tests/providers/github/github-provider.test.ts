@@ -161,6 +161,111 @@ describe('GitHubProvider against a base URL carrying a path prefix', () => {
 });
 
 describe('GitHubProvider discovery', () => {
+  it('fetches only explicitly selected personal and organization repositories', async () => {
+    const stub = createFetchStub([
+      {
+        method: 'GET',
+        pathPattern: /^\/api\/v3\/repos\/octo\/app$/,
+        respond: () => ({
+          status: 200,
+          body: repositoryPayload({ id: 1, name: 'app', full_name: 'octo/app' }),
+        }),
+      },
+      {
+        method: 'GET',
+        pathPattern: /^\/api\/v3\/repos\/organization\/library$/,
+        respond: () => ({
+          status: 200,
+          body: repositoryPayload({
+            id: 2,
+            name: 'library',
+            full_name: 'organization/library',
+            owner: { login: 'organization', id: 99 },
+          }),
+        }),
+      },
+    ]);
+    const results = [];
+    for await (const result of provider(stub.fetch, 'https://example.test/api/v3').discover({
+      ...everything,
+      scope: 'selected',
+      includeSlugs: ['octo/app', 'organization/library'],
+    }))
+      results.push(result);
+    expect(slugs(results)).toEqual(['octo/app', 'organization/library']);
+    expect(stub.requests).toHaveLength(2);
+    stub.assertNoUnmatchedRoutes();
+  });
+
+  it('does not silently omit an inaccessible selected repository', async () => {
+    const stub = createFetchStub([
+      {
+        method: 'GET',
+        pathPattern: /^\/repos\/org\/private$/,
+        respond: () => ({ status: 404, body: { message: 'Not Found' } }),
+      },
+    ]);
+    const results = await discover(stub, {
+      ...everything,
+      scope: 'selected',
+      includeSlugs: ['org/private'],
+    });
+    expect(results).toHaveLength(1);
+    expect(results[0]).toMatchObject({ ok: false });
+    stub.assertNoUnmatchedRoutes();
+  });
+
+  it('retains a selected alias when GitHub returns its canonical name', async () => {
+    const stub = createFetchStub([
+      {
+        method: 'GET',
+        pathPattern: /^\/repos\/octo\/old$/,
+        respond: () => ({
+          status: 200,
+          body: repositoryPayload({ id: 1, name: 'app', full_name: 'org/app' }),
+        }),
+      },
+    ]);
+    expect(
+      slugs(
+        await discover(stub, {
+          ...everything,
+          scope: 'selected',
+          includeSlugs: ['octo/old'],
+        }),
+      ),
+    ).toEqual(['org/app']);
+    stub.assertNoUnmatchedRoutes();
+  });
+
+  it('deduplicates selected aliases by immutable identity and still applies exclusions', async () => {
+    const stub = createFetchStub([
+      {
+        method: 'GET',
+        pathPattern: /^\/repos\/octo\/(app|alias)$/,
+        respond: () => ({
+          status: 200,
+          body: repositoryPayload({ id: 1, name: 'app', full_name: 'octo/app' }),
+        }),
+      },
+      {
+        method: 'GET',
+        pathPattern: /^\/repos\/org\/archived$/,
+        respond: () => ({
+          status: 200,
+          body: repositoryPayload({ id: 2, full_name: 'org/archived', archived: true }),
+        }),
+      },
+    ]);
+    const results = await discover(stub, {
+      ...everything,
+      scope: 'selected',
+      includeSlugs: ['octo/app', 'octo/alias', 'org/archived'],
+      includeArchived: false,
+    });
+    expect(slugs(results)).toEqual(['octo/app']);
+    stub.assertNoUnmatchedRoutes();
+  });
   // 100 is the page size, so 99/100/101 are where an off-by-one would live.
   for (const count of [0, 1, 99, 100, 101, 201]) {
     it(`discovers each of ${String(count)} repositories exactly once`, async () => {

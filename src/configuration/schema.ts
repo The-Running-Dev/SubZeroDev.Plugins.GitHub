@@ -37,6 +37,7 @@ export const configurationSchema = z
 
     repositories: z
       .object({
+        scope: z.enum(['owned', 'selected']).default('owned'),
         // Excluded means not *collected*, not merely hidden: collecting costs API
         // budget whether or not the result is displayed.
         includeForks: z.boolean().default(false),
@@ -50,6 +51,26 @@ export const configurationSchema = z
         excludeSlugs: z.array(z.string().min(1)).default([]),
       })
       .strict()
+      .superRefine((value, ctx) => {
+        if (value.scope !== 'selected') return;
+        if (
+          value.includeSlugs.length === 0 ||
+          value.includeSlugs.some(
+            (slug) =>
+              !/^[A-Za-z0-9-]+\/[A-Za-z0-9_.-]+$/.test(slug) ||
+              ['.', '..'].includes(slug.split('/')[1] ?? ''),
+          ) ||
+          new Set(value.includeSlugs.map((slug) => slug.toLowerCase())).size !==
+            value.includeSlugs.length
+        ) {
+          ctx.addIssue({
+            code: 'custom',
+            path: ['includeSlugs'],
+            message:
+              'Selected scope requires unique exact owner/name slugs, without URLs or globs.',
+          });
+        }
+      })
       .prefault({}),
 
     collection: z

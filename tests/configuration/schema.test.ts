@@ -10,11 +10,40 @@ const fixture = (name: string): unknown =>
   );
 
 describe('configuration schema', () => {
+  it('accepts selected personal and organization repositories but rejects unbounded selection', () => {
+    expect(
+      configurationSchema.safeParse({
+        configVersion: '1.0.0',
+        repositories: {
+          scope: 'selected',
+          includeSlugs: ['octo/app', 'organization/library'],
+        },
+      }).success,
+    ).toBe(true);
+    for (const includeSlugs of [
+      [],
+      ['octo/*'],
+      ['https://example.test/x'],
+      ['octo/../x'],
+      ['octo/app', 'OCTO/APP'],
+    ]) {
+      expect(
+        configurationSchema.safeParse({
+          configVersion: '1.0.0',
+          repositories: {
+            scope: 'selected',
+            includeSlugs,
+          },
+        }).success,
+      ).toBe(false);
+    }
+  });
   it('applies every default from the minimal fixture', () => {
     expect(configurationSchema.parse(fixture('valid-minimal'))).toEqual({
       configVersion: '1.0.0',
       auth: { tokenEnvironmentVariable: 'GITHUB_TOKEN', allowGhCliTokenReuse: false },
       repositories: {
+        scope: 'owned',
         includeForks: false,
         includeArchived: true,
         includeTemplates: true,
