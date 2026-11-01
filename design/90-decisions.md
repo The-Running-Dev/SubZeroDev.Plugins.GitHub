@@ -2,6 +2,14 @@
 
 Append-only. Newest at the top. The rejected alternatives are the point — without them, every future session relitigates the same choice.
 
+## 2026-11-01 — Allow explicitly selected accessible repositories
+
+**Decision.** Keep owned-account discovery as the default. Add opt-in `repositories.scope: "selected"` for a nonempty list of exact, unique `owner/name` slugs. Fetch only those repositories through the existing request wrapper, normalization, cache, and export contracts. Apply the existing filters and deduplicate by immutable numeric identity. A denied or missing selected repository is an error, not successful omission. The credential's authenticated account remains the cache owner; it does not impersonate an organization.
+
+**Why.** A portfolio can include private organization repositories even when its operator authenticates with a personal account. Owner-only enumeration omitted these repositories. Explicit selection bounds acquisition without creating a second collector or crawling every organization. This extends the owned-only Phase One scope recorded below; document and envelope versions remain unchanged because their shapes do not change.
+
+**Rejected.** Treating the organization as the authenticated token identity, silently reusing a host `gh` credential, or collecting organization data inside downstream applications. Those approaches confuse identity or duplicate this plugin's acquisition boundary.
+
 ## Open
 
 <A staging area, not a home. Things noticed mid-slice that were deliberately not acted on. `/track` turns each into a GitHub issue and removes it from here.>
