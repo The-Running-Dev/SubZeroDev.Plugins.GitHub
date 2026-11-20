@@ -97,13 +97,14 @@ jobs:
       - uses: sigstore/cosign-installer@v3
       - name: Sign image by digest
         run: cosign sign --yes '${{ env.IMAGE }}@${{ steps.image.outputs.digest }}'
-      - name: Build and attest release manifest
+      - name: Build release manifest
         run: |
           npx tsx tools/build-release-manifest.ts '${{ steps.image.outputs.digest }}'
           npm run package:check
-          gh attestation sign --subject-path release/plugin.manifest.json
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Attest release manifest
+        uses: actions/attest-build-provenance@v4
+        with:
+          subject-path: release/plugin.manifest.json
       - name: Pack and publish npm package with provenance
         run: |
           npm pack --ignore-scripts

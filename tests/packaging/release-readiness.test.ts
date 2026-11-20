@@ -67,7 +67,9 @@ describe('release readiness', () => {
     expect(workflow).toContain('docker/setup-qemu-action@v3');
     expect(workflow).toContain('platforms: linux/amd64,linux/arm64');
     expect(workflow).toContain('cosign sign --yes');
-    expect(workflow).toContain('gh attestation sign --subject-path release/plugin.manifest.json');
+    expect(workflow).toContain('uses: actions/attest-build-provenance@v4');
+    expect(workflow).toContain('subject-path: release/plugin.manifest.json');
+    expect(workflow).not.toContain('gh attestation sign');
     expect(workflow).toContain('npm publish ./*.tgz --provenance --access public --ignore-scripts');
     expect(workflow).toContain('gh release create');
   });
