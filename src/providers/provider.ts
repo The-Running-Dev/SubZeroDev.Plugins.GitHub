@@ -21,6 +21,8 @@ export interface RepositoryFilter {
   readonly includePublic: boolean;
   readonly includeSlugs: readonly string[];
   readonly excludeSlugs: readonly string[];
+  /** Owned scope only: exact organization logins listed after the personally owned repositories. */
+  readonly organizations?: readonly string[];
 }
 
 export interface ProviderAccess {

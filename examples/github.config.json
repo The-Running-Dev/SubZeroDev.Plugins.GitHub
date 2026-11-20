@@ -12,7 +12,8 @@
     "includePrivate": true,
     "includePublic": true,
     "includeSlugs": [],
-    "excludeSlugs": []
+    "excludeSlugs": [],
+    "organizations": []
   },
   "collection": {
     "profile": "standard"

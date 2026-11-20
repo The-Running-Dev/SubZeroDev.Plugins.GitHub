@@ -1,7 +1,7 @@
 schemaVersion: 1.0.0
 id: subzerodev.github
 name: SubZeroDev GitHub Plugin
-version: 0.1.0
+version: 0.2.0
 description: Collect GitHub repository metadata into provider-independent project models.
 license: MIT
 commands:

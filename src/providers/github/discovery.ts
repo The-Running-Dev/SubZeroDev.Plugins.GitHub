@@ -6,6 +6,7 @@ import type { RepositoryFilter } from '../provider.js';
 import type { GitHubClient } from './client.js';
 import { providerError } from './errors.js';
 import { githubRepositorySchema, type GitHubRepository } from './mapping/repository.js';
+import type { ResourceKey } from './resource-keys.js';
 import { githubUrl } from './urls.js';
 
 const repositoryPageSchema = z.array(githubRepositorySchema);
@@ -70,16 +71,71 @@ export async function* discoverOwnedRepositories(
     return;
   }
 
+  const walks: PageWalk[] = [
+    {
+      resource: 'owned-repositories',
+      path: 'user/repos',
+      query: { affiliation: 'owner' },
+      organization: null,
+    },
+    // Configured order, after the personal walk. A repository the user owns that also
+    // appears under an organization listing — or one GitHub lists for two configured
+    // organizations after a transfer mid-walk — is yielded once, by numeric ID.
+    ...(filter.organizations ?? []).map((organization): PageWalk => ({
+      resource: `organization-repositories:${organization.toLowerCase()}`,
+      path: `orgs/${encodeURIComponent(organization)}/repos`,
+      query: { type: 'all' },
+      organization,
+    })),
+  ];
+
+  for (const walk of walks) {
+    for await (const result of walkPages(client, walk)) {
+      if (!result.ok) {
+        // Discovery is all-or-nothing per run: an organization that cannot be listed
+        // makes the run incomplete rather than silently shrinking the portfolio.
+        yield walk.organization === null
+          ? result
+          : { ok: false, error: organizationError(result.error, walk.organization) };
+        return;
+      }
+      const repository = result.value;
+      if (seen.has(repository.id)) {
+        client.logger.debug('Skipping a repository discovery already yielded.', {
+          providerId: String(repository.id),
+          organization: walk.organization,
+        });
+        continue;
+      }
+      seen.add(repository.id);
+      if (matchesFilter(repository, filter, include, exclude))
+        yield { ok: true, value: repository };
+    }
+  }
+}
+
+interface PageWalk {
+  readonly resource: ResourceKey;
+  readonly path: string;
+  readonly query: Readonly<Record<string, string>>;
+  /** Null for the personally owned listing. */
+  readonly organization: string | null;
+}
+
+async function* walkPages(
+  client: GitHubClient,
+  walk: PageWalk,
+): AsyncIterable<Outcome<GitHubRepository, ProviderError>> {
   for (let page = 1; ; page += 1) {
-    const url = githubUrl(client.baseUrl, 'user/repos', {
-      affiliation: 'owner',
+    const url = githubUrl(client.baseUrl, walk.path, {
+      ...walk.query,
       per_page: String(PER_PAGE),
       page: String(page),
       sort: 'full_name',
       direction: 'asc',
     });
     const response = await client.requester.get(
-      { resource: 'owned-repositories', url: url.toString(), bucket: 'core' },
+      { resource: walk.resource, url: url.toString(), bucket: 'core' },
       (value) => repositoryPageSchema.parse(value),
     );
     if (!response.ok) {
@@ -106,20 +162,34 @@ export async function* discoverOwnedRepositories(
     }
 
     const repositories = response.value.data;
-    for (const repository of repositories) {
-      if (seen.has(repository.id)) {
-        client.logger.debug('Skipping a repository GitHub returned on two pages.', {
-          providerId: String(repository.id),
-          page,
-        });
-        continue;
-      }
-      seen.add(repository.id);
-      if (matchesFilter(repository, filter, include, exclude))
-        yield { ok: true, value: repository };
-    }
+    for (const repository of repositories) yield { ok: true, value: repository };
     if (repositories.length < PER_PAGE) return;
   }
+}
+
+/**
+ * Names the organization a failed listing belongs to. A missing organization and one the
+ * credential may not list (SAML enforcement, a revoked grant) get their own codes so a
+ * caller can tell a typo from an access problem; rate limits and server errors keep
+ * theirs, because their remedy does not depend on which listing tripped them.
+ */
+function organizationError(error: ProviderError, organization: string): ProviderError {
+  const subject = `organization:${organization}`;
+  if (error.kind === 'not-found')
+    return providerError(
+      'not-found',
+      'github_organization_not_found',
+      `GitHub organization ${organization} was not found or is not visible to the credential.`,
+      { status: error.status, subject, retryable: false },
+    );
+  if (error.kind === 'forbidden')
+    return providerError(
+      'forbidden',
+      'github_organization_forbidden',
+      `GitHub denied listing the repositories of organization ${organization}.`,
+      { status: error.status, subject, retryable: false },
+    );
+  return { ...error, subject };
 }
 
 function matchesFilter(

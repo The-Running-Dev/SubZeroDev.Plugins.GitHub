@@ -13,9 +13,17 @@ no migration path for exported documents — an incompatible document is regener
 
 The first public release is prepared but not yet published. Publication remains gated on the tagged
 release workflow, its Windows/Linux quality matrix, container conformance, signed image, and manifest
-attestation.
+attestation. The package version is `0.2.0`. `0.1.0` was never published; its source commit `af9ae19`
+was consumed only as a vendored build.
 
 ### Added
+
+- `repositories.organizations` lists the repositories of explicitly named organizations, private
+  ones included, after the account's own in owned scope. Repositories are deduplicated by numeric ID
+  across listings. A missing or refusing organization makes `sync` partial with
+  `github_organization_not_found` or `github_organization_forbidden`, and the cache is kept.
+  Selected scope refuses the setting. `sync` reports the listed scope as `data.discoveryScope`.
+  Existing configurations behave as before.
 
 - An authored `plugin.yaml`, validated during every build against the vendored contract schema and
   compiled into canonical `dist/plugin.manifest.json`. The bare `manifest` command prints those exact

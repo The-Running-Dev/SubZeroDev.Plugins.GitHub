@@ -38,6 +38,38 @@ describe('configuration schema', () => {
       ).toBe(false);
     }
   });
+
+  it('accepts organization logins in owned scope and rejects malformed, duplicate, or selected-scope ones', () => {
+    const parse = (repositories: Record<string, unknown>) =>
+      configurationSchema.safeParse({ configVersion: '1.0.0', repositories });
+
+    const accepted = [
+      { scope: 'owned', organizations: ['AbsoluteZeroDev'] },
+      { scope: 'owned', organizations: ['a', 'org-name', 'A1-b2'] },
+      { organizations: [] },
+    ];
+    for (const repositories of accepted) expect(parse(repositories).success).toBe(true);
+
+    const rejected = [
+      { organizations: [''] },
+      { organizations: ['-leading'] },
+      { organizations: ['trailing-'] },
+      { organizations: ['double--hyphen'] },
+      { organizations: ['has space'] },
+      { organizations: ['org/repo'] },
+      { organizations: ['a'.repeat(40)] },
+      { organizations: ['Org', 'ORG'] },
+      { organizations: Array.from({ length: 51 }, (_, index) => `org${String(index)}`) },
+      { scope: 'selected', includeSlugs: ['octo/app'], organizations: ['org'] },
+    ];
+    for (const repositories of rejected) expect(parse(repositories).success).toBe(false);
+    expect(accepted).toHaveLength(3);
+    expect(rejected).toHaveLength(10);
+
+    const parsed = parse({ organizations: ['AbsoluteZeroDev'] });
+    expect(parsed.success && parsed.data.repositories.organizations).toEqual(['AbsoluteZeroDev']);
+  });
+
   it('applies every default from the minimal fixture', () => {
     expect(configurationSchema.parse(fixture('valid-minimal'))).toEqual({
       configVersion: '1.0.0',
@@ -52,6 +84,7 @@ describe('configuration schema', () => {
         includePublic: true,
         includeSlugs: [],
         excludeSlugs: [],
+        organizations: [],
       },
       collection: { profile: 'standard' },
       directories: { cache: '.cache', output: 'output' },

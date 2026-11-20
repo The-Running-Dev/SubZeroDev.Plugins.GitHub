@@ -87,6 +87,7 @@ export async function synchronizeRepositories(input: {
       summary: 'Repository discovery was incomplete; the existing cache was preserved.',
       data: {
         discoveredRepositories: discovered.length,
+        discoveryScope: discoveryScope(input.filter),
         cacheWritePerformed: false,
         requestUsage: input.provider.usage(),
       },
@@ -200,6 +201,7 @@ export async function synchronizeRepositories(input: {
         : `Synchronized ${String(observed.length)} repositories with ${String(errors.length)} failures.`,
     data: {
       discoveredRepositories: discovered.length,
+      discoveryScope: discoveryScope(input.filter),
       cachedRepositories: next.length,
       cacheWritePerformed: !input.dryRun,
       dryRun: input.dryRun ?? false,
@@ -308,4 +310,15 @@ function exitCodeFor(code: string | undefined): 2 | 3 | 5 | 6 {
   )
     return 6;
   return 3;
+}
+
+/**
+ * What discovery was asked to cover, reported on every outcome so a caller can state
+ * coverage without re-reading the configuration it passed in.
+ */
+function discoveryScope(filter: Parameters<RepositoryProvider['discover']>[0]): {
+  readonly scope: 'owned' | 'selected';
+  readonly organizations: readonly string[];
+} {
+  return { scope: filter.scope ?? 'owned', organizations: [...(filter.organizations ?? [])] };
 }

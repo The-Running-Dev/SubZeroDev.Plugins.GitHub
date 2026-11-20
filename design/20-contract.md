@@ -17,7 +17,7 @@
 
 ## GitHub semantics
 
-Phase One covers repositories owned by the authenticated user. Forks are excluded by default but configurable; private, archived, disabled, and template repositories remain in scope and are flagged. Organization and contributed repositories are deferred.
+Phase One covers repositories owned by the authenticated user. Forks are excluded by default but configurable; private, archived, disabled, and template repositories remain in scope and are flagged. Owned scope also lists the organizations named in `repositories.organizations`, and nothing else; see the 2026-11-20 decision. Contributed repositories are deferred.
 
 GitHub’s `open_issues_count` is not an issue count because it includes pull requests. Contributor lists carry truncation state. Commit count derives from the last page in the `Link` header. Search API usage is budgeted separately and its eventually consistent results must not create false changes.
 

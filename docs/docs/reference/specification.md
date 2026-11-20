@@ -283,13 +283,16 @@ repositories in `sync-report.json` and the result envelope.
 repository filters, collection profile, cache and output directories, export formats, and rate-limit
 budget.
 
-Organization settings are absent, not merely unused: a setting that is read but not honored is worse
-than a missing one.
+`repositories.organizations` names organizations whose repositories owned scope also lists, after
+the account's own. Each listing is honored in full or the run is incomplete: an organization that
+is missing or refuses the credential stops discovery, the run is partial, and the cache is kept.
+Selected scope refuses the setting rather than ignoring it, because a setting that is read but not
+honored is worse than a missing one.
 
 ## Phase One acceptance
 
 - Authenticates from the environment and refuses to start without a token
-- Discovers every owned repository in scope exactly once
+- Discovers every owned and configured-organization repository in scope exactly once
 - Collects `basic` and `standard` profiles within budget
 - Normalizes into the project model with no GitHub type escaping the provider
 - Writes the canonical output set, deterministically and byte-stably on repeat
