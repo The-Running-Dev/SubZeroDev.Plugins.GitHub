@@ -223,10 +223,7 @@ class FakeProvider implements RepositoryProvider {
     });
   }
 
-  public async *discover(
-    filter: RepositoryFilter,
-  ): AsyncIterable<Outcome<DiscoveredRepository, ProviderError>> {
-    void filter;
+  public async *discover(): AsyncIterable<Outcome<DiscoveredRepository, ProviderError>> {
     await Promise.resolve();
     for (const project of this.projects)
       yield { ok: true, value: { repository: project.repository } };

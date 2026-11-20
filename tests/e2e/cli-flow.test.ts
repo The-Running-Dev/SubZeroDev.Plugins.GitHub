@@ -12,13 +12,10 @@ import type { Project } from '../../src/models/project.js';
 import type { CommandContext } from '../../src/services/command-context.js';
 import type { FileSystemPort } from '../../src/services/ports.js';
 import type {
-  CollectionProfile,
   CollectionResult,
   DiscoveredRepository,
-  RepositoryFilter,
   RepositoryProvider,
   RequestUsage,
-  ResourceConditions,
 } from '../../src/providers/provider.js';
 import type { Outcome, ProviderError } from '../../src/providers/outcome.js';
 import { sha256 } from '../../src/serialization/digest.js';
@@ -224,23 +221,14 @@ class FixtureProvider implements RepositoryProvider {
     );
   }
 
-  public async *discover(
-    filter: RepositoryFilter,
-  ): AsyncIterable<Outcome<DiscoveredRepository, ProviderError>> {
-    void filter;
+  public async *discover(): AsyncIterable<Outcome<DiscoveredRepository, ProviderError>> {
     await Promise.resolve();
     for (const project of this.projects) {
       yield { ok: true, value: { repository: project.repository } };
     }
   }
 
-  public collect(
-    target: DiscoveredRepository,
-    profile: CollectionProfile,
-    conditions: ResourceConditions,
-  ): Promise<Outcome<CollectionResult, ProviderError>> {
-    void profile;
-    void conditions;
+  public collect(target: DiscoveredRepository): Promise<Outcome<CollectionResult, ProviderError>> {
     const id = target.repository.identity.providerId;
     if (this.failures.has(id)) {
       return Promise.resolve({
