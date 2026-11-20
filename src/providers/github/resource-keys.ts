@@ -3,6 +3,7 @@ export type ResourceKey =
   | 'authenticated-user'
   | 'owned-repositories'
   | 'selected-repository'
+  | `organization-repositories:${string}`
   | `repository:${string}`
   | `repository-languages:${string}`
   | `repository-releases:${string}`

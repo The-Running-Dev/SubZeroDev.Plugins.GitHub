@@ -49,10 +49,37 @@ export const configurationSchema = z
         /** Simple `*` globs over `owner/name`. An empty include list means no slug filter. */
         includeSlugs: z.array(z.string().min(1)).default([]),
         excludeSlugs: z.array(z.string().min(1)).default([]),
+        /**
+         * Exact organization logins whose repositories owned scope lists alongside the
+         * personally owned ones. Never inferred from memberships: an organization the
+         * credential happens to reach is not one the user asked to collect.
+         */
+        organizations: z
+          .array(z.string().regex(/^[A-Za-z0-9](?:[A-Za-z0-9]|-(?=[A-Za-z0-9])){0,38}$/))
+          .max(50)
+          .default([]),
       })
       .strict()
       .superRefine((value, ctx) => {
+        if (
+          new Set(value.organizations.map((login) => login.toLowerCase())).size !==
+          value.organizations.length
+        ) {
+          ctx.addIssue({
+            code: 'custom',
+            path: ['organizations'],
+            message: 'Organization logins must be unique, ignoring case.',
+          });
+        }
         if (value.scope !== 'selected') return;
+        if (value.organizations.length > 0) {
+          ctx.addIssue({
+            code: 'custom',
+            path: ['organizations'],
+            message:
+              'Organizations apply only to owned scope; selected scope names each repository.',
+          });
+        }
         if (
           value.includeSlugs.length === 0 ||
           value.includeSlugs.some(

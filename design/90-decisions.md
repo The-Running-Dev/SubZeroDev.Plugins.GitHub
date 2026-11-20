@@ -2,6 +2,14 @@
 
 Append-only. Newest at the top. The rejected alternatives are the point — without them, every future session relitigates the same choice.
 
+## 2026-11-20 — List explicitly configured organizations in owned scope
+
+**Decision.** Add `repositories.organizations`, a list of at most 50 case-insensitively unique organization logins, honored only in owned scope. After the owned listing, discovery lists each named organization through `GET /orgs/{org}/repos?type=all`, in configuration order, with the same paging, filters, request wrapper and budget. One numeric-identity set spans every listing, so an overlapping repository is collected once, under the listing that reached it first. A missing or refusing organization stops discovery with `github_organization_not_found` or `github_organization_forbidden` and subject `organization:<login>`. The run is partial and the cache is kept. Selected scope refuses the setting. The `sync` result reports `discoveryScope`. This is additive. Document and envelope versions are unchanged. The credential's account remains the cache owner.
+
+**Why.** The Dashboard import (its S15) needs to offer organization repositories, such as those of AbsoluteZeroDev, without the operator typing every slug. This partly replaces the specification's "organization settings are absent" rule. That rule's reason still holds: a setting is honored in full or refused, never silently ignored.
+
+**Rejected.** Listing every organization the account belongs to (`/user/orgs`), because it broadens collection without consent. `affiliation=organization_member` on `/user/repos`, because it pulls in collaborator repositories and cannot be scoped to one organization. Skipping an inaccessible organization and succeeding, because a shrinking portfolio would look complete. Allowing organizations in selected scope, where they could only be ignored.
+
 ## 2026-11-01 — Allow explicitly selected accessible repositories
 
 **Decision.** Keep owned-account discovery as the default. Add opt-in `repositories.scope: "selected"` for a nonempty list of exact, unique `owner/name` slugs. Fetch only those repositories through the existing request wrapper, normalization, cache, and export contracts. Apply the existing filters and deduplicate by immutable numeric identity. A denied or missing selected repository is an error, not successful omission. The credential's authenticated account remains the cache owner; it does not impersonate an organization.
