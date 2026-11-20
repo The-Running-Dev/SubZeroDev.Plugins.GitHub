@@ -82,6 +82,11 @@ was consumed only as a vendored build.
   which also records rejecting `@octokit/plugin-throttling`, `@octokit/plugin-retry`, `p-limit`, `msw`,
   and `nock`.
 
+- `zod` moves to `~4.6.7` and `vitest` with `@vitest/coverage-v8` to `^5.1.1`, clearing the high and
+  critical `npm audit` advisories that blocked the release gate. The generated `projects.schema.json`
+  now writes a nullable field as a `type` array (`["string", "null"]`) instead of an `anyOf` pair. The
+  two forms accept exactly the same documents, so `SCHEMA_VERSION` is unchanged.
+
 ### Fixed
 
 - A `/stats/*` `202` that never settles now reports `not-settled` instead of a successful response with
