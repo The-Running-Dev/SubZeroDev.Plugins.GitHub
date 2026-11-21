@@ -71,6 +71,9 @@ describe('release readiness', () => {
     expect(workflow).toContain('subject-path: release/plugin.manifest.json');
     expect(workflow).not.toContain('gh attestation sign');
     expect(workflow).toContain('npm publish ./*.tgz --provenance --access public --ignore-scripts');
+    expect(workflow).toContain('id-token: write');
+    expect(workflow).not.toContain('NODE_AUTH_TOKEN');
+    expect(workflow).not.toContain('NPM_TOKEN');
     expect(workflow).toContain('gh release create');
   });
 

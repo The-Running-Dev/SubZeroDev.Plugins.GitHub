@@ -2,6 +2,14 @@
 
 Append-only. Newest at the top. The rejected alternatives are the point — without them, every future session relitigates the same choice.
 
+## 2026-11-21 — Publish to npm through trusted publishing
+
+**Decision.** The release workflow publishes to npm through npm trusted publishing: the job's GitHub OIDC token is exchanged for a short-lived credential bound to this repository and `release.yml`. The workflow holds no npm token. The package was created by a one-time manual `0.0.0-bootstrap` publish, deprecated, because npm configures a trusted publisher only on an existing package.
+
+**Why.** A stored automation token is a long-lived secret that can publish from anywhere; an OIDC-bound credential can publish only from this workflow and expires with the job.
+
+**Rejected.** Keeping `NPM_TOKEN` as a fallback, which leaves the long-lived secret in place. Bootstrapping by publishing `0.2.0` by hand, which would ship the first real version without provenance.
+
 ## 2026-11-21 — Publish under the `@absolutezerodev` npm scope
 
 **Decision.** Publish the package as `@absolutezerodev/plugins-github` on npmjs.com. This supersedes the package name in the 2026-08-01 entry. The executables, the plugin ID `subzerodev.github`, the repository name and the GHCR image are unchanged.
