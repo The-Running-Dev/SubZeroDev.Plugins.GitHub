@@ -20,9 +20,9 @@ summarizes cached projects, and exports deterministic JSON and YAML documents.
 Run without installing, install globally, or install as a project dependency:
 
 ```bash
-npx @subzerodev/plugins-github --help
-npm install -g @subzerodev/plugins-github
-npm install @subzerodev/plugins-github
+npx @absolutezerodev/plugins-github --help
+npm install -g @absolutezerodev/plugins-github
+npm install @absolutezerodev/plugins-github
 ```
 
 The canonical executable is `subzerodev-github`; `sz-github` is a convenience alias.

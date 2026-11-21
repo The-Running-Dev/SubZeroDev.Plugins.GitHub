@@ -2,6 +2,14 @@
 
 Append-only. Newest at the top. The rejected alternatives are the point — without them, every future session relitigates the same choice.
 
+## 2026-11-21 — Publish under the `@absolutezerodev` npm scope
+
+**Decision.** Publish the package as `@absolutezerodev/plugins-github` on npmjs.com. This supersedes the package name in the 2026-08-01 entry. The executables, the plugin ID `subzerodev.github`, the repository name and the GHCR image are unchanged.
+
+**Why.** The `@subzerodev` scope on npmjs.com belongs to someone else, so the first release's publish was refused. No version was ever published under the old name, so no consumer has to migrate.
+
+**Rejected.** An unscoped name, which loses the namespace that groups the plugins. Renaming the executables or image along with the package, which would break callers for no benefit.
+
 ## 2026-11-20 — List explicitly configured organizations in owned scope
 
 **Decision.** Add `repositories.organizations`, a list of at most 50 case-insensitively unique organization logins, honored only in owned scope. After the owned listing, discovery lists each named organization through `GET /orgs/{org}/repos?type=all`, in configuration order, with the same paging, filters, request wrapper and budget. One numeric-identity set spans every listing, so an overlapping repository is collected once, under the listing that reached it first. A missing or refusing organization stops discovery with `github_organization_not_found` or `github_organization_forbidden` and subject `organization:<login>`. The run is partial and the cache is kept. Selected scope refuses the setting. The `sync` result reports `discoveryScope`. This is additive. Document and envelope versions are unchanged. The credential's account remains the cache owner.

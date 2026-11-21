@@ -13,7 +13,7 @@ sidebar_position: 2
 | Plugin ID | `subzerodev.github`                                                                        |
 | CLI       | `subzerodev-github`, alias `sz-github`                                                     |
 | Contract  | `SubZeroDev.PluginContract` 1.0                                                            |
-| Package   | `@subzerodev/plugins-github`                                                               |
+| Package   | `@absolutezerodev/plugins-github`                                                          |
 | Code      | This repository, `SubZeroDev.Plugins.GitHub`                                               |
 | Design    | [`design/`](https://github.com/The-Running-Dev/SubZeroDev.Plugins.GitHub/tree/main/design) |
 
