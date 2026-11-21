@@ -1,5 +1,5 @@
 {
-  "name": "@subzerodev/plugins-github",
+  "name": "@absolutezerodev/plugins-github",
   "version": "0.2.0",
   "description": "Provider-independent GitHub repository and portfolio data plugin",
   "license": "MIT",

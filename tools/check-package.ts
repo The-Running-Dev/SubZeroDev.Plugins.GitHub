@@ -17,7 +17,7 @@ interface PackageMetadata {
 
 const metadata = JSON.parse(readFileSync(resolve('package.json'), 'utf8')) as PackageMetadata;
 const manifest = parse(readFileSync(resolve('plugin.yaml'), 'utf8')) as { version?: string };
-assert(metadata.name === '@subzerodev/plugins-github', 'Package name is not release-ready.');
+assert(metadata.name === '@absolutezerodev/plugins-github', 'Package name is not release-ready.');
 assert(metadata.private === undefined, 'package.json must not declare private.');
 assert(metadata.license === 'MIT', 'package.json must declare the MIT license.');
 assert(

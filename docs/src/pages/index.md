@@ -35,8 +35,8 @@ The plugin runs standalone. No orchestrator, no host, no service — a token in 
 environment, a configuration file, and a terminal:
 
 ```bash
-npx @subzerodev/plugins-github --help
-npm install -g @subzerodev/plugins-github
+npx @absolutezerodev/plugins-github --help
+npm install -g @absolutezerodev/plugins-github
 subzerodev-github --help
 ```
 

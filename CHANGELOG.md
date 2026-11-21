@@ -75,6 +75,8 @@ was consumed only as a vendored build.
 
 ### Changed
 
+- The npm package is `@absolutezerodev/plugins-github`, because the `@subzerodev` scope is taken. The
+  executables, plugin ID and container image keep their names.
 - **`@octokit/rest` is no longer a dependency.** GitHub is reached through `fetch` and this plugin's own
   request wrapper, which has to retain `304` and `202` as outcomes rather than exceptions and read rate-limit
   and `Link` headers off every response. Recorded in

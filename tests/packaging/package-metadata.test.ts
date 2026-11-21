@@ -19,7 +19,7 @@ describe('publishable package metadata', () => {
   it('declares public npm distribution metadata and allowlisted contents', () => {
     expect(metadata).not.toHaveProperty('private');
     expect(metadata).toMatchObject({
-      name: '@subzerodev/plugins-github',
+      name: '@absolutezerodev/plugins-github',
       license: 'MIT',
       homepage: 'https://plugins-github.subzerodev.com',
       files: ['dist', 'schemas', 'plugin.yaml'],

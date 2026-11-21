@@ -162,7 +162,7 @@ back into the Milestone 1 fixtures.
 
 The plugin was originally `SubZeroDev.Automator.Plugins.GitHub`, packaged as
 `@subzerodev/automator-plugin-github`. That name asserted the plugin is a component of the Automator,
-which the architecture rejects. It is now `SubZeroDev.Plugins.GitHub` and `@subzerodev/plugins-github`
+which the architecture rejects. It is now `SubZeroDev.Plugins.GitHub` and `@absolutezerodev/plugins-github`
 — see [`design/90-decisions.md`](design/90-decisions.md). Do not
 reintroduce the old form.
 
