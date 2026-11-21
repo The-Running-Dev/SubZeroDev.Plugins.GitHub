@@ -105,12 +105,12 @@ jobs:
         uses: actions/attest-build-provenance@v4
         with:
           subject-path: release/plugin.manifest.json
+      # npm trusted publishing: the CLI exchanges this job's GitHub OIDC token for a
+      # short-lived publish credential. No npm token is stored in the repository.
       - name: Pack and publish npm package with provenance
         run: |
           npm pack --ignore-scripts
           npm publish ./*.tgz --provenance --access public --ignore-scripts
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: Create GitHub Release
         run: >-
           gh release create '${{ steps.release.outputs.tag }}'
